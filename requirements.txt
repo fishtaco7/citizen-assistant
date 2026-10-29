@@ -1,0 +1,6 @@
+PySide6-Essentials>=6.6
+PySide6-Addons>=6.6
+mss>=9.0
+numpy>=1.26
+opencv-python>=4.9
+rapidocr-onnxruntime>=1.2.3

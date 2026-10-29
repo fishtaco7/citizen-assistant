@@ -1,0 +1,49 @@
+{
+  "version": "4.10.2",
+  "source": "https://scminer.rocks/data/signature-scanner",
+  "source_updated": "2026-10-09T16:20:51.859Z",
+  "max_cluster": 10,
+  "note": "Ship mining: scan signature = base * number of rocks in the cluster (1-10). Lower base = rarer ore. Base signatures verified against SCMINER patch 4.10.2.",
+  "ship_ores": [
+    { "name": "Quantainium", "short": "QUAN", "base": 3170, "value": 237.48, "rarity": 5, "secondary": "Beryl 10-20%" },
+    { "name": "Stileron",    "short": "STIL", "base": 3185, "value": null,   "rarity": 4, "secondary": "Taranite 10-20%" },
+    { "name": "Savrilium",   "short": "SAVR", "base": 3200, "value": null,   "rarity": 4, "secondary": "Gold 10-20%" },
+    { "name": "Ouratite",    "short": "OURA", "base": 3370, "value": null,   "rarity": 4, "secondary": "Agricium 10-20%" },
+    { "name": "Riccite",     "short": "RICC", "base": 3385, "value": null,   "rarity": 4, "secondary": "Laranite 10-20%" },
+    { "name": "Lindinium",   "short": "LIND", "base": 3400, "value": null,   "rarity": 4, "secondary": "Tungsten 10-20%" },
+    { "name": "Beryl",       "short": "BERY", "base": 3540, "value": 26.73,  "rarity": 3, "secondary": null },
+    { "name": "Taranite",    "short": "TARA", "base": 3555, "value": 75.91,  "rarity": 4, "secondary": null },
+    { "name": "Borase",      "short": "BORA", "base": 3570, "value": 34.79,  "rarity": 4, "secondary": "Gold / Bexalite 5-10%" },
+    { "name": "Gold",        "short": "GOLD", "base": 3585, "value": 77.69,  "rarity": 4, "secondary": "Borase / Bexalite 5-10%" },
+    { "name": "Bexalite",    "short": "BEXA", "base": 3600, "value": 75.89,  "rarity": 4, "secondary": "Gold / Borase 5-10%" },
+    { "name": "Laranite",    "short": "LARA", "base": 3825, "value": 29.93,  "rarity": 3, "secondary": "Tungsten 10-20%" },
+    { "name": "Aslarite",    "short": "ASLA", "base": 3840, "value": null,   "rarity": 3, "secondary": "Titanium / Agricium 5-10%" },
+    { "name": "Titanium",    "short": "TITA", "base": 3855, "value": 4.99,   "rarity": 3, "secondary": "Aslarite / Agricium 5-10%" },
+    { "name": "Tungsten",    "short": "TUNG", "base": 3870, "value": 4.14,   "rarity": 3, "secondary": "Laranite 10-20%" },
+    { "name": "Agricium",    "short": "AGRI", "base": 3885, "value": 27.07,  "rarity": 3, "secondary": "Titanium / Aslarite 5-10%" },
+    { "name": "Torite",      "short": "TORI", "base": 3900, "value": null,   "rarity": 2, "secondary": null },
+    { "name": "Hephaestanite","short": "HEPH", "base": 4180, "value": 27.21, "rarity": 2, "secondary": "Quartz / Silicon 5-10%" },
+    { "name": "Tin",         "short": "TIN",  "base": 4195, "value": null,   "rarity": 2, "secondary": "Copper 10-20%" },
+    { "name": "Quartz",      "short": "QUAR", "base": 4210, "value": 3.96,   "rarity": 2, "secondary": "Hephaestanite / Silicon 5-10%" },
+    { "name": "Corundum",    "short": "CORU", "base": 4225, "value": 3.75,   "rarity": 2, "secondary": "Aluminum 10-20%" },
+    { "name": "Copper",      "short": "COPP", "base": 4240, "value": 3.75,   "rarity": 2, "secondary": "Tin 10-20%" },
+    { "name": "Silicon",     "short": "SILI", "base": 4255, "value": null,   "rarity": 2, "secondary": "Hephaestanite / Quartz 5-10%" },
+    { "name": "Iron",        "short": "IRON", "base": 4270, "value": 3.93,   "rarity": 1, "secondary": null },
+    { "name": "Aluminum",    "short": "ALUM", "base": 4285, "value": 3.24,   "rarity": 1, "secondary": "Corundum 10-20%" },
+    { "name": "Ice",         "short": "ICE",  "base": 4300, "value": null,   "rarity": 1, "secondary": null }
+  ],
+  "ground": {
+    "note": "Ground deposits: signature only tells you the size. The mineral depends on the location.",
+    "max_cluster": 8,
+    "roc_base": 4000,
+    "fps_base": 3000,
+    "minerals": ["Aphorite", "Beradom", "Carinite", "Dolivine", "Feynmaline", "Glacosite", "Hadanite", "Jaclium", "Janalite", "Sadaryx", "Saldynium"]
+  },
+  "debris": {
+    "note": "Salvage: exterior hull panels and scrap metal from wrecks read as clean multiples of 2,000. In space this is usually debris rather than a ground deposit.",
+    "base": 2000,
+    "max_cluster": 10,
+    "name": "Debris",
+    "detail": "HULL PANELS / SCRAP METAL"
+  }
+}

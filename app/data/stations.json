@@ -1,0 +1,1431 @@
+{
+  "meta": {
+    "source": "UEX API 2.0 /terminals",
+    "snapshot": "2026-10-21",
+    "note": "Unique city, orbital-station and outpost names for location autocomplete"
+  },
+  "stations": [
+    {
+      "name": "ARC-L1 Wide Forest Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "",
+      "orbit": "ArcCorp Lagrange Point 1"
+    },
+    {
+      "name": "ARC-L2 Lively Pathway Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "",
+      "orbit": "ArcCorp Lagrange Point 2"
+    },
+    {
+      "name": "ARC-L3 Modern Express Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "",
+      "orbit": "ArcCorp Lagrange Point 3"
+    },
+    {
+      "name": "ARC-L4 Faint Glen Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "",
+      "orbit": "ArcCorp Lagrange Point 4"
+    },
+    {
+      "name": "ARC-L5 Yellow Core Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "",
+      "orbit": "ArcCorp Lagrange Point 5"
+    },
+    {
+      "name": "ArcCorp Mining Area 045",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Wala",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "ArcCorp Mining Area 048",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Wala",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "ArcCorp Mining Area 056",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Wala",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "ArcCorp Mining Area 061",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Wala",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "ArcCorp Mining Area 141",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Daymar",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "ArcCorp Mining Area 157",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Yela",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Area 18",
+      "kind": "city",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "Arid Reach",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Monox",
+      "moon": "",
+      "orbit": "Monox"
+    },
+    {
+      "name": "Ashland",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro V",
+      "moon": "Ignis",
+      "orbit": "Pyro V"
+    },
+    {
+      "name": "Astor's Clearing",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Baijini Point",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "Benson Mining Outpost",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Yela",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Blackrock Exchange",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Terminus"
+    },
+    {
+      "name": "Bountiful Harvest Hydroponics",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Daymar",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Brio's Breaker Yard",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Daymar",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Bud's Growery",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "Euterpe",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Bueno Ravine",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "Bullock's Reach",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Terminus"
+    },
+    {
+      "name": "Canard View",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Terminus"
+    },
+    {
+      "name": "Carver's Ridge",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "Chawla's Beach",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro V",
+      "moon": "",
+      "orbit": "Pyro V"
+    },
+    {
+      "name": "Checkmate Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Monox",
+      "moon": "",
+      "orbit": "Monox Lagrange Point 4"
+    },
+    {
+      "name": "CRU-L1 Ambitious Dream Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "",
+      "orbit": "Crusader Lagrange Point 1"
+    },
+    {
+      "name": "CRU-L4 Shallow Fields Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "",
+      "orbit": "Crusader Lagrange Point 4"
+    },
+    {
+      "name": "CRU-L5 Beautiful Glen Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "",
+      "orbit": "Crusader Lagrange Point 5"
+    },
+    {
+      "name": "Deakins Research",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Yela",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Devlin Scrap & Salvage",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "Euterpe",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Dinger's Depot",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro IV",
+      "moon": "",
+      "orbit": "Pyro IV"
+    },
+    {
+      "name": "Dudley & Daughters",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Pyro VI Lagrange Point 4"
+    },
+    {
+      "name": "Dunboro",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Endgame",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Pyro IV",
+      "moon": "",
+      "orbit": "Pyro VI Lagrange Point 3"
+    },
+    {
+      "name": "Everus Harbor",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "Fallow Field",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro IV",
+      "moon": "",
+      "orbit": "Pyro V"
+    },
+    {
+      "name": "Feo Canyon Depot",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro V",
+      "moon": "Fairo",
+      "orbit": "Pyro V"
+    },
+    {
+      "name": "Frigid Knot",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "Frostbite",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Gallete Family Farms",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Cellin",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Gaslight",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Pyro V",
+      "moon": "",
+      "orbit": "Pyro V Lagrange Point 2"
+    },
+    {
+      "name": "Goner's Deal",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro IV",
+      "moon": "",
+      "orbit": "Pyro V"
+    },
+    {
+      "name": "Gray Gardens Depot",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro I",
+      "moon": "",
+      "orbit": "Pyro I"
+    },
+    {
+      "name": "Green Imperial Housing Exchange",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Yela",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "HDMS-Anderson",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "Aberdeen",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Bezdek",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "Arial",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Edmond",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Hadley",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Hahn",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "Magda",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Lathan",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "Arial",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Norgaard",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "Aberdeen",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Oparei",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Perlman",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "Magda",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Pinewood",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Ryder",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "Ita",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Stanhope",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Thedus",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "HDMS-Woodruff",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "Ita",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "Hickes Research",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Cellin",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Humboldt Mines",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Lyria",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "HUR-L1 Green Glade Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston Lagrange Point 1"
+    },
+    {
+      "name": "HUR-L2 Faithful Dream Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston Lagrange Point 2"
+    },
+    {
+      "name": "HUR-L3 Thundering Express Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston Lagrange Point 3"
+    },
+    {
+      "name": "HUR-L4 Melodic Fields Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston Lagrange Point 4"
+    },
+    {
+      "name": "HUR-L5 High Course Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston Lagrange Point 5"
+    },
+    {
+      "name": "Jackson's Swap",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Monox",
+      "moon": "",
+      "orbit": "Monox"
+    },
+    {
+      "name": "Jumptown",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Daymar",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Kabir's Post",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro V",
+      "moon": "Ignis",
+      "orbit": "Pyro V"
+    },
+    {
+      "name": "Kinder Plots",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Terminus"
+    },
+    {
+      "name": "Kudre Ore",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Daymar",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Last Landings",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Terminus"
+    },
+    {
+      "name": "Levski",
+      "kind": "city",
+      "major": 1,
+      "system": "Nyx",
+      "planet": "",
+      "moon": "",
+      "orbit": "Delamar"
+    },
+    {
+      "name": "Lorville",
+      "kind": "city",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "Loveridge Mineral Reserve",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Lyria",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "Megumi Refueling",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Pyro VI Lagrange Point 5"
+    },
+    {
+      "name": "MIC-L1 Shallow Frontier Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "microTech Lagrange Point 1"
+    },
+    {
+      "name": "MIC-L2 Long Forest Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "microTech Lagrange Point 2"
+    },
+    {
+      "name": "MIC-L3 Endless Odyssey Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "microTech Lagrange Point 3"
+    },
+    {
+      "name": "MIC-L4 Red Crossroads Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "microTech Lagrange Point 4"
+    },
+    {
+      "name": "MIC-L5 Modern Icarus Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "microTech Lagrange Point 5"
+    },
+    {
+      "name": "Narena's Rest",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "New Babbage",
+      "kind": "city",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "NT-999-XX",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Yela",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "NT-999-XXII",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Yela",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Nuen Waste Management",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Daymar",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Nyx Gateway (Pyro)",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "",
+      "moon": "",
+      "orbit": "Nyx Gateway (Pyro system)"
+    },
+    {
+      "name": "Nyx Gateway (Stanton)",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "",
+      "moon": "",
+      "orbit": "Nyx Gateway (Stanton system)"
+    },
+    {
+      "name": "Orbituary",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "Orison",
+      "kind": "city",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Ostler's Claim",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Monox",
+      "moon": "",
+      "orbit": "Monox"
+    },
+    {
+      "name": "Outpost 54",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Paradise Cove",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Wala",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "Patch City",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom Lagrange Point 3"
+    },
+    {
+      "name": "People's Service Station Alpha",
+      "kind": "station",
+      "major": 1,
+      "system": "Nyx",
+      "planet": "",
+      "moon": "",
+      "orbit": "People's Service Station Alpha"
+    },
+    {
+      "name": "People's Service Station Delta",
+      "kind": "station",
+      "major": 1,
+      "system": "Nyx",
+      "planet": "",
+      "moon": "",
+      "orbit": "People's Service Station Delta"
+    },
+    {
+      "name": "People's Service Station Lambda",
+      "kind": "station",
+      "major": 1,
+      "system": "Nyx",
+      "planet": "",
+      "moon": "",
+      "orbit": "People's Service Station Lambda"
+    },
+    {
+      "name": "People's Service Station Theta",
+      "kind": "station",
+      "major": 1,
+      "system": "Nyx",
+      "planet": "",
+      "moon": "",
+      "orbit": "People's Service Station Theta"
+    },
+    {
+      "name": "Picker's Field",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "Port Olisar",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Port Tressler",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Private Property",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Cellin",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Prophet's Peak",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro V",
+      "moon": "Adir",
+      "orbit": "Pyro V"
+    },
+    {
+      "name": "Prospect Depot",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "Pyro Gateway (Nyx)",
+      "kind": "station",
+      "major": 1,
+      "system": "Nyx",
+      "planet": "",
+      "moon": "",
+      "orbit": "Pyro Gateway (Nyx system)"
+    },
+    {
+      "name": "Pyro Gateway (Stanton)",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "",
+      "moon": "",
+      "orbit": "Pyro Gateway (Stanton system)"
+    },
+    {
+      "name": "Rappel",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "Rat's Nest",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Pyro V",
+      "moon": "",
+      "orbit": "Pyro V Lagrange Point 5"
+    },
+    {
+      "name": "Raven's Roost",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Rayari Anvik Research Outpost",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "Calliope",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Rayari Cantwell Research Outpost",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "Clio",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Rayari Deltana Research Outpost",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Rayari Kaltag Research Outpost",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "Calliope",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Rayari McGrath Research Outpost",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "Clio",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Reclamation & Disposal Orinth",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "Rod's Fuel 'N Supplies",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Pyro V",
+      "moon": "",
+      "orbit": "Pyro V Lagrange Point 4"
+    },
+    {
+      "name": "Rough Landing",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Terminus"
+    },
+    {
+      "name": "Ruin Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Terminus"
+    },
+    {
+      "name": "Rustville",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro I",
+      "moon": "",
+      "orbit": "Pyro I"
+    },
+    {
+      "name": "Sacren's Plot",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro IV",
+      "moon": "",
+      "orbit": "Pyro V"
+    },
+    {
+      "name": "Sakura Sun Goldenrod Workcenter",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Samson & Son's Salvage Center",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Wala",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "Scarper's Turn",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Terminus"
+    },
+    {
+      "name": "Seer's Canyon",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro V",
+      "moon": "Vatra",
+      "orbit": "Pyro V"
+    },
+    {
+      "name": "Seraphim Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Shady Glen",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Wala",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "Shepherd's Rest",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "Shubin Mining Facility SAL-2",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Lyria",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "Shubin Mining Facility SAL-5",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Lyria",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "Shubin Mining Facility SCD-1",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Daymar",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Shubin Mining Facility SM0-10",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Shubin Mining Facility SM0-13",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Shubin Mining Facility SM0-18",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Shubin Mining Facility SM0-22",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Shubin Mining Facility SMCa-6",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "Calliope",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Shubin Mining Facility SMCa-8",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "Calliope",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "Slowburn Depot",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Monox",
+      "moon": "",
+      "orbit": "Monox"
+    },
+    {
+      "name": "Stag's Rut",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Pyro I",
+      "moon": "",
+      "orbit": "Pyro I"
+    },
+    {
+      "name": "Stanton Gateway (Nyx)",
+      "kind": "station",
+      "major": 1,
+      "system": "Nyx",
+      "planet": "",
+      "moon": "",
+      "orbit": "Stanton Gateway (Nyx system)"
+    },
+    {
+      "name": "Stanton Gateway (Pyro)",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "",
+      "moon": "",
+      "orbit": "Stanton Gateway (Pyro system)"
+    },
+    {
+      "name": "Starlight Service Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom Lagrange Point 1"
+    },
+    {
+      "name": "Sunset Mesa",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Monox",
+      "moon": "",
+      "orbit": "Monox"
+    },
+    {
+      "name": "Terra Gateway (Stanton)",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "",
+      "moon": "",
+      "orbit": "Terra Gateway (Stanton system)"
+    },
+    {
+      "name": "Terra Mills HydroFarm",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Cellin",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "The Golden Riviera",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "The Necropolis",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "MicroTech",
+      "moon": "",
+      "orbit": "MicroTech"
+    },
+    {
+      "name": "The Orphanage",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "ArcCorp",
+      "moon": "Lyria",
+      "orbit": "ArcCorp"
+    },
+    {
+      "name": "The Yard",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "Tram & Myers Mining",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Crusader",
+      "moon": "Cellin",
+      "orbit": "Crusader"
+    },
+    {
+      "name": "Watcher's Depot",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Terminus",
+      "moon": "",
+      "orbit": "Terminus"
+    },
+    {
+      "name": "Weeping Cove",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    },
+    {
+      "name": "Wikelo Emporium Dasi Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "",
+      "moon": "",
+      "orbit": ""
+    },
+    {
+      "name": "Wikelo Emporium Kinga Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "",
+      "moon": "",
+      "orbit": ""
+    },
+    {
+      "name": "Wikelo Emporium Selo Station",
+      "kind": "station",
+      "major": 1,
+      "system": "Stanton",
+      "planet": "",
+      "moon": "",
+      "orbit": ""
+    },
+    {
+      "name": "Windfall",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Bloom",
+      "moon": "",
+      "orbit": "Bloom"
+    },
+    {
+      "name": "Yang's Place",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Pyro",
+      "planet": "Monox",
+      "moon": "",
+      "orbit": "Monox"
+    },
+    {
+      "name": "Zephyr",
+      "kind": "outpost",
+      "major": 0,
+      "system": "Stanton",
+      "planet": "Hurston",
+      "moon": "",
+      "orbit": "Hurston"
+    }
+  ]
+}
