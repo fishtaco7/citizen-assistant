@@ -295,26 +295,6 @@ class SettingsPanel(QWidget):
         root.addLayout(capture_row)
         root.addSpacing(theme.px(8))
 
-        # Update ------------------------------------------------------
-        root.addWidget(_section("Update"))
-        update_row = QHBoxLayout()
-        update_row.setContentsMargins(theme.px(0), theme.px(0), theme.px(0), theme.px(0))
-        update_row.setSpacing(theme.px(8))
-        self.update_hint = QLabel(f"Installed {build_label()}")
-        self.update_hint.setFont(theme.font(7))
-        self.update_hint.setWordWrap(True)
-        self.update_hint.setStyleSheet(theme.qss(
-            "color: rgba(130,148,166,0.9); background: transparent;"))
-        self.update_btn = _button("CHECK")
-        self.update_btn.setFixedWidth(theme.px(82))
-        self.update_btn.setToolTip(
-            "Compare this install with GitHub, then copy the newest files")
-        self.update_btn.clicked.connect(self._on_update_clicked)
-        update_row.addWidget(self.update_hint, 1)
-        update_row.addWidget(self.update_btn)
-        root.addLayout(update_row)
-        root.addSpacing(theme.px(8))
-
         # Capture region ----------------------------------------------
         root.addWidget(_section("Signature capture region"))
         region_row = QHBoxLayout()
@@ -398,6 +378,28 @@ class SettingsPanel(QWidget):
         data_row.addWidget(self.version_label, 1)
         data_row.addWidget(self.reload_btn)
         root.addLayout(data_row)
+        root.addSpacing(theme.px(8))
+
+        # Update ------------------------------------------------------
+        # Last on purpose: it is a maintenance action, not something adjusted
+        # mid-session, so it sits below the scan and voice controls.
+        root.addWidget(_section("Update"))
+        update_row = QHBoxLayout()
+        update_row.setContentsMargins(theme.px(0), theme.px(0), theme.px(0), theme.px(0))
+        update_row.setSpacing(theme.px(8))
+        self.update_hint = QLabel(f"Installed {build_label()}")
+        self.update_hint.setFont(theme.font(7))
+        self.update_hint.setWordWrap(True)
+        self.update_hint.setStyleSheet(theme.qss(
+            "color: rgba(130,148,166,0.9); background: transparent;"))
+        self.update_btn = _button("CHECK")
+        self.update_btn.setFixedWidth(theme.px(82))
+        self.update_btn.setToolTip(
+            "Compare this install with GitHub, then copy the newest files")
+        self.update_btn.clicked.connect(self._on_update_clicked)
+        update_row.addWidget(self.update_hint, 1)
+        update_row.addWidget(self.update_btn)
+        root.addLayout(update_row)
 
     # ------------------------------------------------------------------
     def _on_pause(self, checked: bool) -> None:

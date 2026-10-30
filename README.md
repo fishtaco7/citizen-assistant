@@ -783,16 +783,16 @@ application shortcuts while you type.
 - **PAUSE / RESUME** — stop OCR without closing anything.
 - **SHOW PREVIEW** — show the raw pixels being read; useful for checking the box.
 - **VOICE** — enable/disable spoken announcements and set their volume (see *Voice* above).
-- **UPDATE** — shows the installed build and a **CHECK** button. Checking reads
-  `app/version.py` from GitHub and compares it with this copy; when something
-  newer exists the button becomes **UPDATE**, which downloads the `main` branch
-  archive and copies `app/`, `tools/`, the launchers and the requirements over
-  this folder, then restarts the overlay. Settings, notes and logs live in
-  `%APPDATA%\Citizen Assistant` and are never touched, and `opencode.jsonc` is
-  deliberately left alone. It does not work for the prebuilt EXE — a running
-  `.exe` cannot replace itself, so that build is updated by downloading a new
-  copy.
 - **RELOAD** — re-read `app/data/signatures.json` without restarting.
+- **UPDATE** — last section in the window: the installed build and a **CHECK**
+  button. Checking reads `app/version.py` from GitHub and compares it with this
+  copy; when something newer exists the button becomes **UPDATE**, which
+  downloads the `main` branch archive and copies `app/`, `tools/`, the launchers
+  and the requirements over this folder, then restarts the overlay. Settings,
+  notes and logs live in `%APPDATA%\Citizen Assistant` and are never touched, and
+  `opencode.jsonc` is deliberately left alone. It does not work for the prebuilt
+  EXE — a running `.exe` cannot replace itself, so that build is updated by
+  downloading a new copy.
 
 Advanced scan tuning lives in `config.json`: `poll_ms` controls the capture
 cadence (default `125`), `fast_single_read` enables the high-confidence
@@ -802,7 +802,7 @@ single-read lock, and `fast_confidence` sets its confidence threshold (default
 Settings are saved to `%APPDATA%\Citizen Assistant\config.json`, next to the ore-location
 cache (`where_to_mine.json`), inventory notes (`inventory.json`), the planner
 route cache (`routes_cache.json`) and the workflow caches (`active_run.json`,
-`workflow_wallet.json`). Panel positions (mining, ore finder, HAULING,
+`workflow_wallet.json`). Panel positions (mining, ore finder, HAULING, UEX,
 INVENTORY, COMBAT) and the nav bar's visibility are also stored in
 `config.json` when the app quits normally, so they reopen where you left them.
 
