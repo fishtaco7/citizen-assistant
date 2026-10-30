@@ -214,6 +214,11 @@ class MarketplaceData:
         self.source = ""
         self.error = ""
         self.loaded_at = 0.0
+        # Diagnostics for the panel footer: how much the API sent, and how much
+        # the inactive/expired filter removed.  Without these, "missing ads"
+        # is impossible to tell apart from "the API sent a small page".
+        self.fetched = 0
+        self.dropped = 0
 
     # ------------------------------------------------------------------
     @property
@@ -230,9 +235,18 @@ class MarketplaceData:
             self.loaded_at = 0.0
 
     def fetch(self) -> None:
-        """Read the board, trying each known collection name in turn."""
+        """Read the board, keeping whichever collection name returns most.
+
+        The names below have all been used for marketplace data at some point.
+        Picking the largest response rather than the first one that answers
+        means a smaller, partial collection can never shadow the full board.
+        """
         self.error = ""
         last: Exception | None = None
+        best_name = ""
+        best_live: list[dict] = []
+        best_rows = 0
+
         for name in ENDPOINTS:
             try:
                 payload = _get(f"{API}/{name}")
@@ -245,15 +259,19 @@ class MarketplaceData:
                 continue
 
             live = [row for row in rows if _is_active(row)]
-            ads = [ad for ad in (parse_ad(row) for row in live) if ad]
-            if not ads:
-                continue
+            if len(live) > len(best_live):
+                best_name, best_live, best_rows = name, live, len(rows)
 
-            self.ads = _sort(ads)
-            self.source = f"{API}/{name}"
-            self.loaded_at = time.time()
-            _write_cache(live)
-            return
+        if best_live:
+            ads = [ad for ad in (parse_ad(row) for row in best_live) if ad]
+            if ads:
+                self.ads = _sort(ads)
+                self.source = f"{API}/{best_name}"
+                self.loaded_at = time.time()
+                self.fetched = len(best_live)
+                self.dropped = max(0, best_rows - len(best_live))
+                _write_cache(best_live)
+                return
 
         self.load_cached()
         if not self.ads:

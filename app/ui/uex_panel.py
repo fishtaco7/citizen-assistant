@@ -339,8 +339,9 @@ class UexPanel(QWidget):
         sell, buy = self._data.counts()
         self.total.setText(f"{sell} SELL · {buy} BUY")
         self.footer.setText(
-            f"{len(ads)} ADS · NEWEST FIRST · UEX MARKETPLACE"
-            + (f" · SHOWING {len(shown)}" if len(ads) > len(shown) else ""))
+            f"{len(ads)} SHOWN · {self._data.fetched} LIVE"
+            f" · {self._data.dropped} HIDDEN · NEWEST FIRST")
+        self.status.setToolTip(self._data.source or "Not loaded yet")
 
     def _empty_text(self) -> str:
         if not self._data.ads:
