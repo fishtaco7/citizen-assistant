@@ -24,6 +24,7 @@ import re
 import shutil
 import sys
 import tempfile
+import time
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -80,14 +81,24 @@ def _newer(published: str, installed: str) -> bool:
 
 
 def _text_at(url: str, timeout: float) -> str:
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    request = urllib.request.Request(url, headers={
+        "User-Agent": USER_AGENT,
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    })
     with urllib.request.urlopen(request, timeout=timeout) as response:
         return response.read().decode("utf-8", "replace")
 
 
 def published_version(timeout: float = 15.0) -> str:
-    """VERSION from GitHub's copy of app/version.py."""
-    body = _text_at(RAW_VERSION, timeout)
+    """VERSION from GitHub's copy of app/version.py.
+
+    raw.githubusercontent.com is fronted by a CDN that keeps serving the copy
+    it already has for a few minutes after a push, which made CHECK report
+    "up to date" right after a release. A unique query string gives the CDN a
+    cache key it has never seen, so the request reaches the repository.
+    """
+    body = _text_at(f"{RAW_VERSION}?t={int(time.time())}", timeout)
     match = re.search(r'VERSION\s*=\s*["\']([^"\']+)', body)
     if not match:
         raise RuntimeError("GitHub returned an unexpected version file")
