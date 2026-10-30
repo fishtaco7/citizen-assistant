@@ -4,4 +4,6 @@ __pycache__/
 venv/
 .DS_Store
 tools/preview_out/
+build/
+dist/
 *.log

@@ -75,6 +75,28 @@ Settings and notes from an older `SC-Overlay` folder (`config.json`,
 `Citizen Assistant` folder automatically on first run, so the region
 calibration and stash notes carry over.
 
+### Prebuilt EXE (GitHub Actions)
+
+The repository can build a Windows executable without a Windows machine. On
+GitHub, open **Actions → Build Windows EXE → Run workflow** on `main`. When it
+finishes, download the **CitizenAssistant-windows-x64** artifact, unzip it, and
+run `CitizenAssistant.exe`. Keep the folder intact: the executable needs the
+files next to it.
+
+The build runs PyInstaller on `windows-latest` with the pinned versions from
+`requirements-lock.txt`. `citizen-assistant.spec` bundles `app/data` and
+`app.ico`, and collects the OCR runtime that `app/ocr.py` imports lazily. Pushing
+a `v*` tag also runs the build.
+
+To build locally on Windows:
+
+```bat
+py -3.13 -m pip install -r requirements-lock.txt pyinstaller
+py -3.13 -m PyInstaller --noconfirm --clean citizen-assistant.spec
+```
+
+The result is `dist\CitizenAssistant\CitizenAssistant.exe`.
+
 ### Manual install
 
 PySide6 pulls in very deep paths, so use a short install location — `C:\scov` is
