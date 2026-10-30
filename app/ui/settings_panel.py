@@ -184,14 +184,16 @@ class SettingsPanel(QWidget):
         self.btc_copy.setToolTip("Copy the Bitcoin donation address")
         self.btc_copy.setEnabled(bool(BTC_ADDRESS))
         self.btc_copy.clicked.connect(self._copy_btc)
-        # Keep the full address on its own line; the copy button sits below so
-        # it cannot squeeze the address into an ellipsis/clipped label.
-        root.addWidget(self.btc_label)
-        btc_actions = QHBoxLayout()
-        btc_actions.setContentsMargins(theme.px(0), theme.px(0), theme.px(0), theme.px(0))
-        btc_actions.addStretch(1)
-        btc_actions.addWidget(self.btc_copy)
-        root.addLayout(btc_actions)
+        # Address and button share one line.  The label's minimum width is
+        # cleared so the address can shrink instead of pushing COPY out of the
+        # panel at a large UI scale.
+        self.btc_label.setMinimumWidth(0)
+        btc_row = QHBoxLayout()
+        btc_row.setContentsMargins(theme.px(0), theme.px(0), theme.px(0), theme.px(0))
+        btc_row.setSpacing(theme.px(8))
+        btc_row.addWidget(self.btc_label, 1)
+        btc_row.addWidget(self.btc_copy)
+        root.addLayout(btc_row)
         root.addSpacing(theme.px(8))
 
         # Appearance --------------------------------------------------
