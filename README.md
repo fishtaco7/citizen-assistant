@@ -92,19 +92,26 @@ Settings and notes from an older `SC-Overlay` folder (`config.json`,
 `Citizen Assistant` folder automatically on first run, so the region
 calibration and stash notes carry over.
 
-### Prebuilt EXE (GitHub Actions)
+### Prebuilt EXE
 
-The repository can build a Windows executable without a Windows machine. On
-GitHub, open **Actions → Build Windows EXE → Run workflow** on `main`. When it
-finishes, download the **CitizenAssistant-windows-x64** artifact, unzip it, and
-run `CitizenAssistant.exe`. Keep the folder intact: the executable needs the
-files next to it.
+Download **CitizenAssistant-windows-x64.zip** from the
+[Releases](https://github.com/fishtaco7/citizen-assistant/releases) page, unzip
+it, and run `CitizenAssistant.exe`. Keep the folder intact: the executable needs
+the files next to it.
+
+The EXE is unsigned, so SmartScreen warns on first run — choose **More info →
+Run anyway**. It also cannot update itself, because Windows will not let a
+running `.exe` replace its own files, so a new release means downloading it
+again. The `install.bat` route updates in place from `⚙` → **UPDATE**.
+
+Releases are produced by `.github/workflows/release.yml` when a `v*` tag is
+pushed; the job fails if the tag does not match `VERSION` in `app/version.py`.
+Pushes to `main` also build an artifact under **Actions** for testing, but those
+expire after 30 days and need a GitHub login.
 
 The build runs PyInstaller on `windows-latest` with the pinned versions from
 `requirements-lock.txt`. `citizen-assistant.spec` bundles `app/data` and
-`app.ico`, and collects the OCR runtime that `app/ocr.py` imports lazily. Pushing
-to `main` or a `v*` tag runs the build, so the newest artifact always matches the
-newest code; you can also start it by hand.
+`app.ico`, and collects the OCR runtime that `app/ocr.py` imports lazily.
 
 To build locally on Windows:
 

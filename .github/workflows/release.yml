@@ -1,0 +1,65 @@
+name: Release Windows EXE
+
+# Tag a commit to publish a download:
+#
+#   git tag v1.2.14
+#   git push origin v1.2.14
+#
+# The job refuses to publish when the tag does not match VERSION in
+# app/version.py, so a release can never advertise the wrong build number.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-lock.txt pyinstaller
+
+      - name: Check the tag matches the build
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart('v')
+          $line = Select-String -Path app/version.py -Pattern '^VERSION\s*=\s*"([^"]+)"'
+          $ver = $line.Matches[0].Groups[1].Value
+          if ($tag -ne $ver) {
+            throw "tag $tag does not match VERSION $ver in app/version.py"
+          }
+          Write-Host "Releasing v$ver"
+
+      - name: Import check
+        run: python -c "import app.main; print('import ok')"
+
+      - name: Build
+        run: pyinstaller --noconfirm --clean citizen-assistant.spec
+
+      - name: Package
+        run: Compress-Archive -Path dist/CitizenAssistant/* -DestinationPath CitizenAssistant-windows-x64.zip
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: CitizenAssistant-windows-x64.zip
+          fail_on_unmatched_files: true
+          generate_release_notes: true
