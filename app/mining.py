@@ -16,6 +16,11 @@ DATA_PATH = Path(__file__).with_name("data") / "signatures.json"
 
 MAX_CLUSTER = 10
 MAX_GROUND_CLUSTER = 8
+# Debris is not a rock cluster: each hull panel contributes 2,000 to the
+# signature, so a large wreck can read far beyond a 10-rock cluster. Capping
+# this at MAX_CLUSTER made 22,000 (11 panels) fall through to a fuzzy
+# Quantanium match instead of being recognised as salvage.
+MAX_DEBRIS_CLUSTER = 50
 
 
 @dataclass(frozen=True)
@@ -79,7 +84,7 @@ class MiningData:
         self.ground_minerals = list(ground.get("minerals", []))
         debris = raw.get("debris", {})
         self.debris_base = int(debris.get("base", 2000))
-        self.debris_max_cluster = int(debris.get("max_cluster", MAX_CLUSTER))
+        self.debris_max_cluster = int(debris.get("max_cluster", MAX_DEBRIS_CLUSTER))
         self.debris_name = debris.get("name", "Debris")
         self.debris_detail = debris.get("detail", "HULL PANELS / SCRAP METAL")
 

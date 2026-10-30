@@ -22,7 +22,7 @@ CASES = [
     (10710, "Borase", 3),
     (4225, "Corundum", 1),
     (4285, "Aluminum", 1),
-    (6340, "Quantainium", 2),
+    (6340, "Quantanium", 2),
     (9000, None, None),       # ground only: FPS x3 (not a 2,000 multiple)
 ]
 
@@ -65,13 +65,17 @@ def main() -> int:
         (15540, "Agricium", 4),
         (38850, "Agricium", 10),
         (3600 * 4, "Bexalite", 4),
-        (3170 * 5, "Quantainium", 5),
+        (3170 * 5, "Quantanium", 5),
         # Salvage panels / wreck scrap: multiples of 2,000 are Debris.
         (2000, "Debris", 1),
         (4000, "Debris", 2),
         (6000, "Debris", 3),
         (8000, "Debris", 4),
         (10000, "Debris", 5),
+        # Larger wrecks exceed a 10-rock cluster; 22,000 used to fall through
+        # to a fuzzy Quantanium guess.
+        (22000, "Debris", 11),
+        (24000, "Debris", 12),
     )
     for value, ore, count in lookup_cases:
         m = data.lookup(value)

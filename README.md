@@ -285,9 +285,14 @@ EPIC · Gold / Bexalite 5-10%
 - **BORASE ×3** — the mineral and how many deposits are in the rock
   (10,710 = 3 × 3,570).
 - **DEBRIS ×2** — salvage: exterior hull panels and scrap metal from wrecks
-  read as clean multiples of 2,000 (2,000, 4,000, 6,000, 8,000 …). When the
-  same number could also be a ground deposit (4,000, 6,000, 8,000 …), the
-  detail line says so, e.g. `HULL PANELS / SCRAP METAL · OR ROC DEPOSIT ×1`.
+  read as clean multiples of 2,000 (2,000, 4,000, 6,000, 8,000 …). A large
+  wreck goes well past a 10-rock cluster, so `22,000` is `DEBRIS ×11` rather
+  than an ore. When the same number could also be a ground deposit (4,000,
+  6,000, 8,000 …), the detail line says so, e.g.
+  `HULL PANELS / SCRAP METAL · OR ROC DEPOSIT ×1`.
+- A leading `~` (`~QUANTANIUM`) means the number is *near* that ore's signature
+  but not an exact multiple of it — a hint from OCR jitter, never a lock, and
+  never spoken.
 - **73% MATCH** — OCR confidence, not mineral certainty. The signature itself
   is matched exactly against the table whenever possible.
 - The second line is the rarity and the secondary ores for that signature.

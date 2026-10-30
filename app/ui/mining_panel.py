@@ -106,6 +106,10 @@ class _Verdict(QWidget):
     def _headline(self, lost: bool) -> tuple[str, QColor, str]:
         if self._match is not None:
             name = self._match.label if self._match.is_ground else self._match.name
+            if not self._match.exact:
+                # Not an exact multiple of this ore's signature: mark it so a
+                # nearest-guess is never mistaken for a confirmation.
+                name = f"~{name}"
             color = theme.DIM if lost else theme.rarity_color(self._match.rarity)
             return name.upper(), color, f"×{self._match.count}"
         if self._value is not None:
