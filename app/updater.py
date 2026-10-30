@@ -35,7 +35,8 @@ REPO = "fishtaco7/citizen-assistant"
 BRANCH = "main"
 RAW_VERSION = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}/app/version.py"
 ARCHIVE = f"https://codeload.github.com/{REPO}/zip/refs/heads/{BRANCH}"
-USER_AGENT = "Citizen-Assistant/1.0 (personal overlay; +https://uexcorp.space)"
+USER_AGENT = (f"Citizen-Assistant/{VERSION} "
+              "(+https://github.com/fishtaco7/citizen-assistant)")
 
 COPY_DIRS = ("app", "tools")
 COPY_FILES = (

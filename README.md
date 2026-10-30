@@ -887,6 +887,37 @@ It never opens a handle to the game, reads its memory, injects a DLL, or
 synthesizes input into the game. That keeps it on the safe side of EAC, but any
 third-party overlay is still your own risk to take.
 
+## Privacy and network access
+
+The overlay has no server component and opens no listening port, so nothing can
+connect to it. It does not hook, inject into or read the memory of the game
+process: it tails `Game.log` as text and OCRs a screen region you calibrate,
+entirely on your machine.
+
+Outbound traffic is GET requests only:
+
+| Destination | Why |
+| --- | --- |
+| `api.uexcorp.uk` | trade routes and the UEX marketplace tab |
+| `scminer.rocks` | ore locations and signature data |
+| `raw.githubusercontent.com` | hauling mission snapshot, update check |
+| `codeload.github.com` | the update archive, only when you press UPDATE |
+
+There is no telemetry, no analytics and no account. Screenshots, notes and
+inventory data are never uploaded; everything the app stores lives in
+`%APPDATA%\Citizen Assistant`.
+
+### Updates are manual
+
+Nothing installs itself in the background. `⚙` → **CHECK** only asks GitHub for
+`app/version.py` and compares versions. Pressing **UPDATE** is what downloads
+the `main` archive, copies it over this folder and restarts the overlay. If you
+never press it, the build stays exactly as installed.
+
+The code that reaches users is therefore whatever is committed to `main` in this
+repository. A fork or a copy can change its own version, but cannot change this
+one — only the repository owner can push to it.
+
 ## Troubleshooting
 
 | Symptom | Fix |

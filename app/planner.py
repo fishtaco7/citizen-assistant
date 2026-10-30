@@ -28,9 +28,11 @@ from typing import Callable
 
 from .config import config_dir
 from .stations import clean_terminal_name
+from .version import VERSION
 
 API = "https://api.uexcorp.uk/2.0"
-USER_AGENT = "Citizen-Assistant/1.0 (personal overlay; +https://uexcorp.space)"
+USER_AGENT = (f"Citizen-Assistant/{VERSION} "
+              "(+https://github.com/fishtaco7/citizen-assistant)")
 CACHE_NAME = "routes_cache.json"
 SEED_NAME = "hauling_top_routes.json"
 REFRESH_SECONDS = 15 * 60

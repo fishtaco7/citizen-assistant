@@ -24,9 +24,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .config import config_dir
+from .version import VERSION
 
 API = "https://api.uexcorp.uk/2.0"
-USER_AGENT = "Citizen-Assistant/1.0 (personal overlay; +https://uexcorp.space)"
+USER_AGENT = (f"Citizen-Assistant/{VERSION} "
+              "(+https://github.com/fishtaco7/citizen-assistant)")
 
 COMMODITIES_TTL = 12 * 3600
 ROUTES_TTL = 15 * 60

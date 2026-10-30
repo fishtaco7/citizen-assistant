@@ -20,10 +20,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .config import config_dir
+from .version import VERSION
 
 API = "https://api.uexcorp.uk/2.0"
 SITE = "https://uexcorp.space/marketplace/"
-USER_AGENT = "Citizen-Assistant/1.0 (personal overlay; +https://uexcorp.space)"
+USER_AGENT = (f"Citizen-Assistant/{VERSION} "
+              "(+https://github.com/fishtaco7/citizen-assistant)")
 
 # Tried in order; the first collection that answers with rows wins.
 ENDPOINTS = ("marketplace", "marketplace_ads", "marketplace_listings")
