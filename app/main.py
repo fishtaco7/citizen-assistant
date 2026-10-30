@@ -480,6 +480,13 @@ class OverlayApp(QObject):
             self.uex.place_default(self.panel)
         self.uex.clamp_to_screen()
 
+        # Reopen whatever was on screen last time. A UI-scale restart used to
+        # come back with every panel closed, which made the restart feel like a
+        # crash instead of a settings change.
+        for tool_id in self.cfg.get("open_tools") or []:
+            if isinstance(tool_id, str):
+                self.open_tool(tool_id)
+
         # macOS has no permission-free global hotkey API. Register application
         # shortcuts so F3/F4 still work whenever one of our windows has focus;
         # the tray menu is the always-available fallback.
@@ -966,6 +973,16 @@ class OverlayApp(QObject):
             self.cfg["combat_pos"] = [self.combat_panel.x(),
                                       self.combat_panel.y()]
             self.cfg["uex_pos"] = [self.uex.x(), self.uex.y()]
+            self.cfg["open_tools"] = [
+                tool_id for tool_id, widget in (
+                    ("mining", self.panel),
+                    ("orefinder", self.orefinder),
+                    ("hauling", self.hauling),
+                    ("uex", self.uex),
+                    ("inventory", self.inventory),
+                    ("combat", self.combat_panel),
+                    ("settings", self.settings),
+                ) if widget.isVisible()]
             self.cfg["hauling_cargo"] = self.hauling.capacity()
             self.cfg["hauling_commodity"] = self.hauling.current_commodity()
             self.cfg["nav_visible"] = self.nav.shown

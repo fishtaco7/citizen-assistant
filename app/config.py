@@ -81,6 +81,7 @@ DEFAULTS: dict = {
     "inventory_pos": None,
     "uex_pos": None,
     "combat_pos": None,
+    "open_tools": [],
     "hauling_cargo": 32,              # SCU used for trip-profit maths
     "hauling_commodity": 0,           # 0 = all commodities / top routes
     "hauling_selection_version": 2,   # migration marker for the new default
