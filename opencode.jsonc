@@ -1,0 +1,68 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Lockdown with one narrow exception: git/gh operations on this repo.
+  "permissions": [
+    // Filesystem: nothing outside this project, for any file tool.
+    { "action": "external_directory", "resource": "*", "effect": "deny" },
+
+    // No shell by default. This removes the master key: sudo, env dumps,
+    // keyring/secret-tool lookups, browser profile paths, everything.
+    { "action": "shell", "resource": "*", "effect": "deny" },
+
+    // Only these git/gh subcommands, listed after the deny so they win.
+    // No `git *` and no `gh api` — the exception stays narrow.
+    { "action": "shell", "resource": "git status *", "effect": "allow" },
+    { "action": "shell", "resource": "git diff *", "effect": "allow" },
+    { "action": "shell", "resource": "git log *", "effect": "allow" },
+    { "action": "shell", "resource": "git add *", "effect": "allow" },
+    { "action": "shell", "resource": "git commit *", "effect": "allow" },
+    { "action": "shell", "resource": "git push *", "effect": "allow" },
+    { "action": "shell", "resource": "git branch *", "effect": "allow" },
+    { "action": "shell", "resource": "git config user.*", "effect": "allow" },
+    { "action": "shell", "resource": "gh auth setup-git", "effect": "allow" },
+    { "action": "shell", "resource": "gh auth status", "effect": "allow" },
+    { "action": "shell", "resource": "gh repo view *", "effect": "allow" },
+
+    // No Code Mode. This also removes the browser tools and MCP resource
+    // readers, which are only reachable through it.
+    { "action": "execute", "resource": "*", "effect": "deny" },
+
+    // Subagents carry their own permission sets, so none may be spawned.
+    { "action": "subagent", "resource": "*", "effect": "deny" },
+
+    // No network fetches or searches (also blocks localhost DevTools ports).
+    { "action": "webfetch", "resource": "*", "effect": "deny" },
+    { "action": "websearch", "resource": "*", "effect": "deny" },
+
+    // Lock the lock: the agent may not rewrite its own permission files.
+    { "action": "edit", "resource": "opencode.json", "effect": "deny" },
+    { "action": "edit", "resource": "opencode.jsonc", "effect": "deny" },
+    { "action": "edit", "resource": ".opencode/*", "effect": "deny" },
+
+    // Defense in depth: refuse to read secret-shaped files even if they
+    // appear inside the project.
+    { "action": "read", "resource": "*.env", "effect": "deny" },
+    { "action": "read", "resource": "*.env.*", "effect": "deny" },
+    { "action": "read", "resource": "*.pem", "effect": "deny" },
+    { "action": "read", "resource": "*.key", "effect": "deny" },
+    { "action": "read", "resource": "*.p12", "effect": "deny" },
+    { "action": "read", "resource": "*.pfx", "effect": "deny" },
+    { "action": "read", "resource": "*id_rsa*", "effect": "deny" },
+    { "action": "read", "resource": "*id_ed25519*", "effect": "deny" },
+    { "action": "read", "resource": "*credential*", "effect": "deny" },
+    { "action": "read", "resource": "*secret*", "effect": "deny" },
+    { "action": "read", "resource": "*token*", "effect": "deny" },
+    { "action": "read", "resource": "*cookie*", "effect": "deny" },
+    { "action": "read", "resource": "*password*", "effect": "deny" },
+
+    // Same refusal for edits to secret-shaped files.
+    { "action": "edit", "resource": "*.env", "effect": "deny" },
+    { "action": "edit", "resource": "*.env.*", "effect": "deny" },
+    { "action": "edit", "resource": "*id_rsa*", "effect": "deny" },
+    { "action": "edit", "resource": "*id_ed25519*", "effect": "deny" },
+    { "action": "edit", "resource": "*credential*", "effect": "deny" },
+    { "action": "edit", "resource": "*secret*", "effect": "deny" },
+    { "action": "edit", "resource": "*token*", "effect": "deny" }
+  ]
+}
