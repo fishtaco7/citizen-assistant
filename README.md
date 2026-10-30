@@ -972,3 +972,16 @@ On macOS use `./run.command --demo`, `./run.command --demo --open hauling`,
 `.venv/bin/python -m tools.combat_selftest` and
 `.venv/bin/python -m tools.blueprint_selftest`; there is no `pythonw`, so the
 console stays attached.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). Use it, fork it, ship it; there is no warranty.
+
+The overlay itself is original work. Data and assets keep their own terms: the
+bundled hauling mission snapshot comes from
+[SCHaulingPlanner](https://github.com/FSCSOFT-Official/SCHaulingPlanner) (MIT),
+and market, ore and station data belong to
+[UEX Corp](https://uexcorp.space) and [SCMiner](https://scminer.rocks).
+Star Citizen is a trademark of Cloud Imperium Games; this project is
+unaffiliated with CIG.
+

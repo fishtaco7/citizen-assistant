@@ -10,7 +10,7 @@ how you tell, at a glance, which copy is actually running.
 """
 from __future__ import annotations
 
-VERSION = "1.2.13"
+VERSION = "1.2.14"
 BUILD_DATE = "2026-10-30"
 
 

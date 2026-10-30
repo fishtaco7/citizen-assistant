@@ -52,6 +52,7 @@ COPY_FILES = (
     "run.command",
     "run-hidden.vbs",
     "README.md",
+    "LICENSE",
     "app.ico",
     ".gitignore",
 )
