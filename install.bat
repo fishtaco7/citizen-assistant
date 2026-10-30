@@ -25,7 +25,10 @@ if errorlevel 1 (
 
 echo.
 echo Creating shortcuts ...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\make_shortcuts.ps1" -ProjectDir "%~dp0"
+rem No -ProjectDir: $PSScriptRoot already points at tools\, so the script finds
+rem the app folder itself. Passing "%~dp0" ends in a backslash ("C:\path\"),
+rem and the \" is read as an escaped quote, which arrives as an illegal path.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\make_shortcuts.ps1"
 if errorlevel 1 (
     echo.
     echo Could not create the shortcuts.
@@ -33,9 +36,16 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo.
+echo  Installed folder: %~dp0
+set "PY=C:\scov\Scripts\python.exe"
+if exist "%~dp0.venv\Scripts\python.exe" set "PY=%~dp0.venv\Scripts\python.exe"
+if exist "%PY%" "%PY%" -m app --version
+echo  The desktop and Start menu shortcuts now launch this folder.
+
 choice /C YN /N /M "Start Citizen Assistant automatically with Windows? [Y/N] "
 if errorlevel 2 goto skip_startup
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\make_shortcuts.ps1" -ProjectDir "%~dp0" -Startup
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\make_shortcuts.ps1" -Startup
 if errorlevel 1 echo Warning: could not create the startup shortcut.
 :skip_startup
 

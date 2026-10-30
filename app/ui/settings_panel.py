@@ -6,6 +6,7 @@ from PySide6.QtGui import QColor, QFont, QGuiApplication, QImage, QPainter, QPen
 from PySide6.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSlider,
                                QVBoxLayout, QWidget)
 
+from ..version import label as build_label
 from . import theme
 
 WIDTH = 384
@@ -115,6 +116,15 @@ class SettingsPanel(QWidget):
         title.setStyleSheet(theme.qss("color: rgba(168,184,200,0.95); background: transparent;"))
         head.addWidget(title)
         head.addStretch(1)
+
+        build = QLabel(build_label())
+        build.setFont(theme.font(7))
+        build.setStyleSheet(theme.qss(
+            "color: rgba(130,148,166,0.85); background: transparent;"))
+        build.setToolTip(
+            "Build of this folder. If it is older than the copy you just "
+            "downloaded, an earlier install is still being launched.")
+        head.addWidget(build)
 
         close = QPushButton("✕")
         close.setCursor(Qt.CursorShape.PointingHandCursor)

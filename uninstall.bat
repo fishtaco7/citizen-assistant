@@ -5,7 +5,7 @@ setlocal
 cd /d "%~dp0"
 
 echo Removing Citizen Assistant shortcuts ...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\make_shortcuts.ps1" -ProjectDir "%~dp0" -Remove
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\make_shortcuts.ps1" -Remove
 echo.
 echo Shortcuts removed.
 echo The app folder, C:\scov and %%APPDATA%%\Citizen Assistant were left untouched.

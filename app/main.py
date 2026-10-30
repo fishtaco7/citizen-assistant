@@ -33,6 +33,7 @@ from .ui.orefinder_panel import OreFinderPanel
 from .ui.region_selector import RegionSelector
 from .ui.settings_panel import SettingsPanel
 from .ui import theme
+from .version import label as version_label
 from .voice import Voice, spoken_text
 
 APP_TITLE = "Citizen Assistant"
@@ -252,7 +253,9 @@ def _already_running_notice() -> None:
     ctypes.windll.user32.MessageBoxW(
         None,
         "Citizen Assistant is already running.\n\n"
-        "Use its tray icon, or press F3 to show the nav bar.",
+        "Use its tray icon, or press F3 to show the nav bar.\n\n"
+        f"This copy is {version_label()}. If the running copy is older, "
+        "quit it from the tray and start this one.",
         APP_TITLE,
         0x00000040)                 # MB_ICONINFORMATION
 
@@ -1034,6 +1037,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="open a tool at startup (debugging)")
     parser.add_argument("--restart", action="store_true",
                         help=argparse.SUPPRESS)
+    parser.add_argument("--version", action="version",
+                        version=f"Citizen Assistant {version_label()}")
     args = parser.parse_args(argv)
 
     if not _acquire_single_instance(replacing=args.restart):

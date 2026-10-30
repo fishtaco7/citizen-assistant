@@ -53,12 +53,14 @@ so no capture region is needed. The Windows launchers are unaffected.
 
 ### One-click install (Windows)
 
-Run **`install.bat`** once. It sets up `C:\scov` (if needed), installs the
-requirements, creates a **Citizen Assistant** shortcut on the desktop and in the Start
-menu, and asks whether it should start with Windows.
+Run **`install.bat`** from the folder you want to use. It sets up `C:\scov` (if
+needed), installs the requirements, creates a **Citizen Assistant** shortcut on the
+desktop and in the Start menu, removes shortcuts left behind by a previous install,
+and asks whether it should start with Windows.
 
-The shortcuts launch `pythonw.exe -m app` directly, so **no console window is
-ever shown**. `run-hidden.vbs` does the same thing straight from the folder.
+The shortcuts launch `pythonw.exe launcher.py` by absolute path, so **no console
+window is ever shown** and the shortcut always runs the copy it was created from.
+`run-hidden.vbs` does the same thing straight from the folder.
 
 Only one copy runs at a time. Launching a second copy shows a short notice
 instead of opening a duplicate overlay, because the extra copy could not
@@ -69,6 +71,21 @@ settings and the `C:\scov` environment are left alone.
 
 Because `pythonw.exe` has no console, unhandled errors are appended to
 `%APPDATA%\Citizen Assistant\error.log` — check that file if the overlay stops starting.
+
+### Checking which build is running
+
+Every copy stamps its build in `⚙` next to the title, and on the command line:
+
+```bat
+C:\scov\Scripts\python.exe -m app --version
+```
+
+Windows keeps shortcuts forever. After downloading a new copy, run `install.bat`
+**from the new folder**: it rewrites the desktop and Start menu shortcuts to point
+at that folder, and deletes any left behind by a previous install, so Start menu
+search can no longer launch the old one. Shortcuts now call `launcher.py` by
+absolute path, so the copy that runs is the one next to the shortcut's folder
+rather than whatever happens to be the working directory.
 
 Settings and notes from an older `SC-Overlay` folder (`config.json`,
 `inventory.json`, `unlocked_blueprints.json`) are copied into the new
@@ -86,7 +103,8 @@ files next to it.
 The build runs PyInstaller on `windows-latest` with the pinned versions from
 `requirements-lock.txt`. `citizen-assistant.spec` bundles `app/data` and
 `app.ico`, and collects the OCR runtime that `app/ocr.py` imports lazily. Pushing
-a `v*` tag also runs the build.
+to `main` or a `v*` tag runs the build, so the newest artifact always matches the
+newest code; you can also start it by hand.
 
 To build locally on Windows:
 
@@ -801,6 +819,9 @@ third-party overlay is still your own risk to take.
 | Blueprint tracker misses an unlock | Confirm the log contains `<SHUDEvent_OnNotification> Added notification "Received Blueprint: ...`; set `SC_GAME_LOG` to the right `Game.log`. If a patch changes the wording, pass custom `BlueprintLogParser` patterns. Delete `unlocked_blueprints.json` only if you want to reset new-vs-duplicate detection. |
 | Bar/scanner hidden behind a browser | It re-asserts topmost every 2 s; if it still loses, run the game borderless, not exclusive fullscreen. |
 | Bar appears twice | Two copies are running. Kill the extra `python`/`pythonw` process. |
+| Start menu opens an old version | Run `install.bat` from the new folder — it repoints the shortcuts and deletes stale ones. Then compare the build stamp in `⚙`. |
+| `⚙` shows no build stamp or no **SCREENSHOTS** row | You are running a copy from before those features. Quit it from the tray, then start `run.bat` inside the folder you downloaded. |
+| COMBAT does nothing and no panel appears | Usually an older build without the on-screen clamp. Check the build stamp before changing anything else. |
 | Scanner shows `UNKNOWN` | The number is not in the table, or OCR dropped a digit. Check the raw value shown. |
 | Nothing appears in screenshots | Open `⚙` → **SCREENSHOTS** and set it to **VISIBLE**. If it already says VISIBLE, your build predates the toggle: run with `--capture-visible`. |
 | Scanner stops reading after making screenshots visible | A panel now overlaps the calibrated scan box, so the scanner captures the overlay instead of the HUD. Move that panel away from the box, or set **SCREENSHOTS** back to **HIDDEN** while mining. |
