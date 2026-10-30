@@ -21,6 +21,7 @@ from .blueprints import BlueprintTracker
 from .capture import is_region_valid
 from .combat import CombatTracker
 from .config import Config, config_dir, open_folder
+from .game_log import GameLogMonitor
 from .hotkeys import HotkeyThread
 from .mining import MiningData
 from .orefinder import LiveData
@@ -273,6 +274,8 @@ class OverlayApp(QObject):
     combat_event = Signal(object)
     blueprint_unlocked_signal = Signal(object)
     inventory_event_signal = Signal(object)
+    # Re-emitted from the Game.log tailer's thread so the GUI can react.
+    pilot_seat = Signal(bool)
 
     def __init__(self, app: QApplication, cfg: Config, demo: bool = False,
                  capture_visible: bool = False, launch_args: list[str] | None = None):
@@ -325,6 +328,12 @@ class OverlayApp(QObject):
                                      2: int(cfg["hotkey_panic"])})
         self.hotkeys.pressed.connect(self._on_hotkey)
 
+        # Read-only Game.log tailer for pilot-seat notifications, so the
+        # scanner can close when the player stands up. Nothing touches the
+        # game process; the monitor only reads text.
+        self.game_log = GameLogMonitor(callback=self._on_game_log_event)
+        self.pilot_seat.connect(self._on_pilot_seat)
+
         self._build_tray()
         self._wire()
         self.app.aboutToQuit.connect(self.hauling.shutdown)
@@ -332,6 +341,7 @@ class OverlayApp(QObject):
         self.app.aboutToQuit.connect(self.blueprint_tracker.close)
         # Last chance to write the notepad before the process exits.
         self.app.aboutToQuit.connect(self.notes.flush)
+        self.app.aboutToQuit.connect(self.game_log.stop)
 
         self._freshness = QTimer(self)
         self._freshness.setInterval(500)
@@ -519,6 +529,7 @@ class OverlayApp(QObject):
         self._freshness.start()
         self._topmost.start()
         self.hotkeys.start()
+        self.game_log.start()
 
         if not has_region and not self.demo:
             self.panel.set_scan_idle("No capture region — open settings (⚙) to calibrate")
@@ -656,6 +667,21 @@ class OverlayApp(QObject):
     def _on_combat_event(self, event) -> None:
         """Forward tracker payloads without creating or touching a window."""
         self.combat_event.emit(event)
+
+    def _on_game_log_event(self, event) -> None:
+        """Runs on the log tailer's thread: re-emit, never touch widgets."""
+        if event.kind == "pilot_seat" and event.seated is not None:
+            self.pilot_seat.emit(bool(event.seated))
+
+    def _on_pilot_seat(self, seated: bool) -> None:
+        """Close the mining scanner when the player leaves the pilot seat."""
+        if seated:
+            return
+        if not bool(self.cfg.get("close_scanner_on_seat_exit", True)):
+            return
+        if self.panel.isVisible():
+            self.panel.hide()
+            self._sync_nav_active()
 
     def _on_inventory_event(self, event) -> None:
         """Forward blueprint payloads to the host toast / shopping-list hook."""

@@ -307,6 +307,11 @@ EPIC · Gold / Bexalite 5-10%
 
 When the number leaves the screen the last reading stays visible but dims.
 
+Leaving the pilot seat closes the scanner. The overlay reads the same
+`Game.log` notification the hauling workflow uses (`Exited pilot seat`), so the
+panel disappears when you stand up without anything touching the game. Set
+`close_scanner_on_seat_exit` to `false` in `config.json` to keep it open.
+
 ### Voice
 
 The scanner can say the result out loud. When a signature locks it announces the

@@ -60,6 +60,8 @@ DEFAULTS: dict = {
     "stability_reads": 2,               # fallback reads before the value is shown
     "fast_single_read": True,           # high-confidence exact reads lock immediately
     "fast_confidence": 0.97,            # OCR confidence needed for the fast path
+    # Close the mining scanner when Game.log reports leaving the pilot seat.
+    "close_scanner_on_seat_exit": True,
     "scan_tuning_version": 1,           # migration marker for the faster defaults
     "min_value": 2500,
     "max_value": 60000,
