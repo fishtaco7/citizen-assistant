@@ -36,8 +36,8 @@ class _UpdateWorker(QThread):
     def run(self) -> None:  # noqa: D102
         try:
             if self._mode == "check":
-                _installed, published, newer = updater.newest()
-                self.done.emit("check", published if newer else "")
+                _installed, published, _newer = updater.newest()
+                self.done.emit("check", published)
             else:
                 self.done.emit("apply", updater.apply())
         except Exception as exc:      # surface it, never take the app down
@@ -470,12 +470,15 @@ class SettingsPanel(QWidget):
 
     def _on_update_done(self, mode: str, value: str) -> None:
         if mode == "check":
-            if value:
+            if value and updater.is_newer(value):
                 self._pending_version = value
                 self.update_hint.setText(f"v{value} available")
                 self.update_btn.setText("UPDATE")
             else:
-                self.update_hint.setText(f"Up to date · {build_label()}")
+                # Name both numbers: "nothing happened" usually just means the
+                # installed and published versions are the same build.
+                self.update_hint.setText(
+                    f"Up to date · GitHub has v{value or '?'}")
                 self.update_btn.setText("CHECK")
             return
 

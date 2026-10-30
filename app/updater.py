@@ -100,6 +100,11 @@ def newest(timeout: float = 15.0) -> tuple[str, str, bool]:
     return VERSION, published, _newer(published, VERSION)
 
 
+def is_newer(published: str) -> bool:
+    """Whether ``published`` (a version string) is ahead of this install."""
+    return _newer(published, VERSION)
+
+
 def _version_in(folder: Path) -> str:
     path = folder / "app" / "version.py"
     try:

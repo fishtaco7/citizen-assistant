@@ -231,6 +231,11 @@ load on the scanner thread.
 | --- | --- |
 | **F3** | Show / hide the nav bar |
 | **F4** | Hide everything (panic key) |
+
+F3 and F4 are delivered two ways: `RegisterHotKey` for the normal case, and a
+25 ms `GetAsyncKeyState` poll for games that stop delivering hotkeys while
+exclusive fullscreen owns the display. If they still do nothing in a particular
+game, run it borderless / windowed fullscreen rather than exclusive.
 | drag a panel header | Move that window |
 | `⚙` on the nav bar | Open settings |
 | `MINING` on the nav bar | Show / hide the scanner |
@@ -851,6 +856,7 @@ third-party overlay is still your own risk to take.
 | Combat tracker shows no events | Confirm `Game.log` is being written, or set `SC_GAME_LOG` to its path. Combat log formats are patch-dependent; update the parser patterns if a patch changes them. |
 | Blueprint tracker misses an unlock | Confirm the log contains `<SHUDEvent_OnNotification> Added notification "Received Blueprint: ...`; set `SC_GAME_LOG` to the right `Game.log`. If a patch changes the wording, pass custom `BlueprintLogParser` patterns. Delete `unlocked_blueprints.json` only if you want to reset new-vs-duplicate detection. |
 | Bar/scanner hidden behind a browser | It re-asserts topmost every 2 s; if it still loses, run the game borderless, not exclusive fullscreen. |
+| F3/F4 do nothing while the game is focused | Fixed in v1.2.1 by polling `GetAsyncKeyState` alongside `RegisterHotKey`, because exclusive fullscreen stops `WM_HOTKEY` reaching a background thread. If it still fails, run the game borderless. |
 | Bar appears twice | Two copies are running. Kill the extra `python`/`pythonw` process. |
 | Start menu opens an old version | Run `install.bat` from the new folder — it repoints the shortcuts and deletes stale ones. Then compare the build stamp in `⚙`. |
 | `⚙` shows no build stamp or no **SCREENSHOTS** row | You are running a copy from before those features. Quit it from the tray, then start `run.bat` inside the folder you downloaded. |
