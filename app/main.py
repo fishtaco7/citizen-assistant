@@ -904,26 +904,34 @@ class OverlayApp(QObject):
             return
 
         self._recent.append(res.value)
+        # Refresh the liveness timer on any readable number: "lost" means the
+        # HUD left the screen, not that we are unsure which of two readings is
+        # right.
+        self._last_good_at = time.monotonic()
         needed = max(1, int(self.cfg["stability_reads"]))
         stable = (len(self._recent) >= needed
                   and len(set(self._recent)) == 1)
         top = matches[0] if matches else None
+        value = res.value
         # A high-confidence exact signature is trustworthy enough to show on
-        # the first read. Keep the two-read confirmation for fuzzy or less
-        # certain OCR so a single misread cannot announce the wrong ore.
+        # the first read, but only while nothing is on screen. Replacing a
+        # number that is already shown needs the same confirmation as a first
+        # lock: OCR can alternate between two plausible readings (8,000, and
+        # 28,000 when a stray leading digit joins the crop) and both are exact
+        # matches, which used to flip the panel on every frame.
+        changing = self._last_value is not None and value != self._last_value
         fast_lock = (
             bool(self.cfg.get("fast_single_read", True))
             and top is not None
             and top.exact
             and float(res.confidence) >= float(self.cfg["fast_confidence"])
+            and not changing
         )
         if not stable and not fast_lock:
             self.panel.set_state("reading")
             return
 
-        value = res.value
         self._last_value = value
-        self._last_good_at = time.monotonic()
         self._last_matches = matches
         if matches and not matches[0].is_ground:
             self._last_match_name = matches[0].name

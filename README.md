@@ -295,6 +295,12 @@ EPIC · Gold / Bexalite 5-10%
   never spoken.
 - **73% MATCH** — OCR confidence, not mineral certainty. The signature itself
   is matched exactly against the table whenever possible.
+- A number already on screen is only replaced after two identical reads, so OCR
+  alternating between two readings (for example `8,000` and a stray leading
+  digit giving `28,000`) cannot make the panel flip back and forth. The first
+  lock is still immediate.
+- If the reading keeps flickering, the crop is probably catching a digit from a
+  neighbouring HUD element; re-calibrate with a tighter box around the digits.
 - The second line is the rarity and the secondary ores for that signature.
 - No known signature at that exact number shows `UNKNOWN` plus the closest
   table entry, so a single misread digit is obvious instead of misleading.
