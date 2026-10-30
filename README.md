@@ -220,7 +220,7 @@ load on the scanner thread.
   `SC_GAME_LOG` to a full path to override the search.
 - The overlay windows are marked `WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW`, so they
   never steal focus from the game. They are **visible in screenshots and
-  streams by default**; `⚙` → **SCREENSHOTS → HIDDEN** hides them from capture
+  streams by default**; `⚙` → the **HIDDEN** button hides them from capture
   (OBS, the game's own screenshots) when you want that instead.
 - The OCR path needs `opencv-python` and `rapidocr-onnxruntime` from
   `requirements.txt`. `setup.bat` installs both into `C:\scov`.
@@ -770,8 +770,9 @@ application shortcuts while you type.
 - **APPEARANCE** — UI scale (75–150% in 5% steps) and opacity slider
   (30–100%) for the content panels (mining, ore finder, HAULING, UEX, INVENTORY
   and COMBAT); the nav bar and settings window stay fully visible while you
-  adjust opacity. **SCREENSHOTS → VISIBLE/HIDDEN** controls whether the windows appear
-  in screenshots, OBS and screen shares (stored as `capture_exclude`).
+  adjust opacity. The **VISIBLE/HIDDEN** button beside *Shown in screenshots and
+  streams* controls whether the windows appear in screenshots, OBS and screen
+  shares (stored as `capture_exclude`).
   The scale is applied by the overlay itself (`app/ui/theme.py`) rather than by
   Qt's `QT_SCALE_FACTOR`, because that variable only changes widget geometry on
   Windows/Linux — on macOS it was ignored, which is why the slider used to do
@@ -859,12 +860,12 @@ third-party overlay is still your own risk to take.
 | F3/F4 do nothing while the game is focused | Fixed in v1.2.1 by polling `GetAsyncKeyState` alongside `RegisterHotKey`, because exclusive fullscreen stops `WM_HOTKEY` reaching a background thread. If it still fails, run the game borderless. |
 | Bar appears twice | Two copies are running. Kill the extra `python`/`pythonw` process. |
 | Start menu opens an old version | Run `install.bat` from the new folder — it repoints the shortcuts and deletes stale ones. Then compare the build stamp in `⚙`. |
-| `⚙` shows no build stamp or no **SCREENSHOTS** row | You are running a copy from before those features. Quit it from the tray, then start `run.bat` inside the folder you downloaded. |
+| `⚙` shows no build stamp or no screenshots button | You are running a copy from before those features. Quit it from the tray, then start `run.bat` inside the folder you downloaded. |
 | COMBAT does nothing and no panel appears | Usually an older build without the on-screen clamp. Check the build stamp before changing anything else. |
 | UEX shows no ads | Press `↻`. If the status stays `OFFLINE`, the public API is not serving the marketplace at that path — check the endpoint names at the top of `app/marketplace.py` against the current UEX API docs. |
 | Scanner shows `UNKNOWN` | The number is not in the table, or OCR dropped a digit. Check the raw value shown. |
-| Nothing appears in screenshots | Open `⚙` → **SCREENSHOTS** and set it to **VISIBLE**. If it already says VISIBLE, your build predates the toggle: run with `--capture-visible`. |
-| Scanner stops reading after making screenshots visible | A panel now overlaps the calibrated scan box, so the scanner captures the overlay instead of the HUD. Move that panel away from the box, or set **SCREENSHOTS** back to **HIDDEN** while mining. |
+| Nothing appears in screenshots | Open `⚙` and set the screenshots button to **VISIBLE**. If it already says VISIBLE, your build predates the toggle: run with `--capture-visible`. |
+| Scanner stops reading after making screenshots visible | A panel now overlaps the calibrated scan box, so the scanner captures the overlay instead of the HUD. Move that panel away from the box, or set the screenshots button back to **HIDDEN** while mining. |
 | UI scale slider seems to do nothing | It needs a restart: press **RESTART** next to the slider (or quit and start again). The hint turns amber while the chosen scale is not active yet. |
 | `run.bat` says Python was not found | Install Python 3.11+ (64-bit) and tick “Add python.exe to PATH”, or run `setup.bat` once to create `C:\scov`. |
 | A black console flashes when a refinery order completes | Fixed: the speech/WAV helpers start PowerShell with `CREATE_NO_WINDOW`. If you see it, you are running an older copy. |

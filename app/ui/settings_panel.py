@@ -276,24 +276,21 @@ class SettingsPanel(QWidget):
         capture_row.setContentsMargins(theme.px(0), theme.px(0),
                                        theme.px(0), theme.px(0))
         capture_row.setSpacing(theme.px(8))
-        capture_name = QLabel("SCREENSHOTS")
-        capture_name.setFixedWidth(theme.px(58))
-        capture_name.setFont(theme.font(8, QFont.Weight.DemiBold, spacing=0.8))
-        capture_name.setStyleSheet(theme.qss(
-            "color: rgba(150,166,182,0.95); background: transparent;"))
         self.capture_btn = _button("VISIBLE", checkable=True)
         self.capture_btn.setFixedWidth(theme.px(82))
         self.capture_btn.setChecked(True)
         self.capture_btn.setToolTip(
             "Include the overlay in screenshots and screen shares")
         self.capture_btn.toggled.connect(self._on_capture)
+        # The sentence is the label now: it already says what the state means,
+        # so the separate SCREENSHOTS caption is gone and the button sits to
+        # its right.
         self.capture_hint = QLabel("Shown in screenshots and streams")
-        self.capture_hint.setFont(theme.font(7))
+        self.capture_hint.setFont(theme.font(8))
         self.capture_hint.setStyleSheet(theme.qss(
-            "color: rgba(130,148,166,0.9); background: transparent;"))
-        capture_row.addWidget(capture_name)
-        capture_row.addWidget(self.capture_btn)
+            "color: rgba(150,166,182,0.95); background: transparent;"))
         capture_row.addWidget(self.capture_hint, 1)
+        capture_row.addWidget(self.capture_btn)
         root.addLayout(capture_row)
         root.addSpacing(theme.px(8))
 
