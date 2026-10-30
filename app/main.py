@@ -29,6 +29,7 @@ from .ui.hauling_panel import HaulingPanel
 from .ui.inventory_panel import InventoryPanel
 from .ui.mining_panel import MiningPanel
 from .ui.navbar import NavBar
+from .ui.notes_panel import NotesPanel
 from .ui.orefinder_panel import OreFinderPanel
 from .ui.region_selector import RegionSelector
 from .ui.settings_panel import SettingsPanel
@@ -53,6 +54,8 @@ TOOLS = [
      "hint": "Remember loot and supplies left at other stations"},
     {"id": "combat", "label": "COMBAT", "enabled": True,
      "hint": "Live kill, soft-death and destruction feed from Game.log"},
+    {"id": "notes", "label": "NOTES", "enabled": True,
+     "hint": "A notepad that saves itself"},
 ]
 
 
@@ -301,6 +304,7 @@ class OverlayApp(QObject):
         self.hauling = HaulingPanel()
         self.inventory = InventoryPanel()
         self.uex = UexPanel(endpoint=self.cfg.get("uex_marketplace_endpoint") or None)
+        self.notes = NotesPanel()
 
         # Headless combat feed: the tracker stays Qt-free; this panel only
         # renders the structured events it forwards.
@@ -326,6 +330,8 @@ class OverlayApp(QObject):
         self.app.aboutToQuit.connect(self.hauling.shutdown)
         self.app.aboutToQuit.connect(self.combat.close)
         self.app.aboutToQuit.connect(self.blueprint_tracker.close)
+        # Last chance to write the notepad before the process exits.
+        self.app.aboutToQuit.connect(self.notes.flush)
 
         self._freshness = QTimer(self)
         self._freshness.setInterval(500)
@@ -348,6 +354,7 @@ class OverlayApp(QObject):
         self.inventory.close_requested.connect(self._on_inventory_close)
         self.combat_panel.close_requested.connect(self._on_combat_close)
         self.uex.close_requested.connect(self._on_uex_close)
+        self.notes.close_requested.connect(self._on_notes_close)
         self.combat_event.connect(
             self.combat_panel.add_event,
             Qt.ConnectionType.QueuedConnection)
@@ -480,6 +487,13 @@ class OverlayApp(QObject):
             self.uex.place_default(self.panel)
         self.uex.clamp_to_screen()
 
+        notes_pos = self.cfg.get("notes_pos")
+        if isinstance(notes_pos, list) and len(notes_pos) == 2:
+            self.notes.move(int(notes_pos[0]), int(notes_pos[1]))
+        else:
+            self.notes.place_default(self.panel)
+        self.notes.clamp_to_screen()
+
         # Reopen whatever was on screen last time. A UI-scale restart used to
         # come back with every panel closed, which made the restart feel like a
         # crash instead of a settings change.
@@ -519,9 +533,9 @@ class OverlayApp(QObject):
                 win32.make_overlay_window(widget)
             except Exception:
                 pass
-        # HAULING, INVENTORY and UEX have text controls, so they must be able
-        # to take keyboard focus.
-        for widget in (self.hauling, self.inventory, self.uex):
+        # HAULING, INVENTORY, UEX and NOTES have text controls, so they must be
+        # able to take keyboard focus.
+        for widget in (self.hauling, self.inventory, self.uex, self.notes):
             try:
                 win32.make_focusable_window(widget)
             except Exception:
@@ -537,7 +551,7 @@ class OverlayApp(QObject):
     def _apply_capture_visibility(self) -> None:
         show = self._capture_visible()
         for widget in (self.nav, self.panel, self.settings, self.orefinder,
-                       self.hauling, self.inventory, self.uex,
+                       self.hauling, self.inventory, self.uex, self.notes,
                        self.combat_panel):
             try:
                 if show:
@@ -558,7 +572,7 @@ class OverlayApp(QObject):
 
     def _assert_topmost(self) -> None:
         for widget in (self.nav, self.panel, self.orefinder, self.hauling,
-                       self.settings, self.inventory, self.uex,
+                       self.settings, self.inventory, self.uex, self.notes,
                        self.combat_panel):
             if not widget.isVisible():
                 continue
@@ -587,6 +601,7 @@ class OverlayApp(QObject):
         self.hauling.hide()
         self.inventory.hide()
         self.uex.hide()
+        self.notes.hide()
         self.combat_panel.hide()
         self.nav.set_active(None)
 
@@ -601,6 +616,8 @@ class OverlayApp(QObject):
             self._toggle_inventory()
         elif tool_id == "uex":
             self._toggle_uex()
+        elif tool_id == "notes":
+            self._toggle_notes()
         elif tool_id == "combat":
             self._toggle_combat()
 
@@ -616,6 +633,8 @@ class OverlayApp(QObject):
             self._toggle_inventory()
         elif tool_id == "uex" and not self.uex.isVisible():
             self._toggle_uex()
+        elif tool_id == "notes" and not self.notes.isVisible():
+            self._toggle_notes()
         elif tool_id == "combat" and not self.combat_panel.isVisible():
             self._toggle_combat()
         elif tool_id == "settings" and not self.settings.isVisible():
@@ -626,6 +645,7 @@ class OverlayApp(QObject):
                                 ("uex", self.uex),
                                 ("inventory", self.inventory),
                                 ("combat", self.combat_panel),
+                                ("notes", self.notes),
                                 ("orefinder", self.orefinder),
                                 ("mining", self.panel)):
             if widget.isVisible():
@@ -716,6 +736,21 @@ class OverlayApp(QObject):
 
     def _on_uex_close(self) -> None:
         self.uex.hide()
+        self._sync_nav_active()
+
+    def _toggle_notes(self) -> None:
+        if self.notes.isVisible():
+            self.notes.hide()
+            self._sync_nav_active()
+            return
+        self.notes.clamp_to_screen()
+        self.notes.show()
+        self.notes.raise_()
+        self.nav.set_active("notes")
+        self._assert_topmost()
+
+    def _on_notes_close(self) -> None:
+        self.notes.hide()
         self._sync_nav_active()
 
     def _toggle_combat(self) -> None:
@@ -973,6 +1008,7 @@ class OverlayApp(QObject):
             self.cfg["combat_pos"] = [self.combat_panel.x(),
                                       self.combat_panel.y()]
             self.cfg["uex_pos"] = [self.uex.x(), self.uex.y()]
+            self.cfg["notes_pos"] = [self.notes.x(), self.notes.y()]
             self.cfg["open_tools"] = [
                 tool_id for tool_id, widget in (
                     ("mining", self.panel),
@@ -981,6 +1017,7 @@ class OverlayApp(QObject):
                     ("uex", self.uex),
                     ("inventory", self.inventory),
                     ("combat", self.combat_panel),
+                    ("notes", self.notes),
                     ("settings", self.settings),
                 ) if widget.isVisible()]
             self.cfg["hauling_cargo"] = self.hauling.capacity()
@@ -1086,7 +1123,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="do not hide the overlay from screen capture (debugging/streaming)")
     parser.add_argument("--open", choices=("mining", "orefinder",
                                            "hauling", "inventory", "uex",
-                                           "combat", "settings"),
+                                           "combat", "notes", "settings"),
                         help="open a tool at startup (debugging)")
     parser.add_argument("--restart", action="store_true",
                         help=argparse.SUPPRESS)

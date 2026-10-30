@@ -243,6 +243,7 @@ game, run it borderless / windowed fullscreen rather than exclusive.
 | `HAULING` on the nav bar | Show / hide trade routes and hauling contracts |
 | `INVENTORY` on the nav bar | Show / hide manual stash notes |
 | `COMBAT` on the nav bar | Show / hide the live Game.log combat feed |
+| `NOTES` on the nav bar | Show / hide the notepad |
 | tray icon | Show the bar, quit |
 
 > On macOS, F3/F4 are application shortcuts — they work while one of the
@@ -531,6 +532,19 @@ when it must run on the GUI thread. Set `SC_GAME_LOG` to override the log path,
 or pass `registry_path=` / `log_watcher_factory=` for tests or alternate
 installs.
 
+## NOTES
+
+`NOTES` is a plain notepad next to `COMBAT`, for anything worth remembering —
+routes, buyers, spawn rules, prices — without leaving the game.
+
+- Type and it saves itself: a write is queued 700 ms after the last keystroke,
+  and again when the panel is hidden or the app quits.
+- The status chip reads `SAVED`, `SAVING…`, or `NOT SAVED` with the reason.
+- Stored as plain UTF-8 at `%APPDATA%\Citizen Assistant\notes.txt`, so it can be
+  opened, edited or backed up with any text editor. Writes go through a
+  temporary file and a rename, so a crash cannot leave a half-written note.
+- The footer shows the character count and the file name.
+
 ## HAULING
 
 `HAULING` sits directly beside `ORE FINDER` and has three tabs:
@@ -779,8 +793,8 @@ application shortcuts while you type.
 - **SUPPORT** — "Like my overlay? Buy me a coffee (or a ship)!" with a BTC
   address and copy button.
 - **APPEARANCE** — UI scale (75–150% in 5% steps) and opacity slider
-  (30–100%) for the content panels (mining, ore finder, HAULING, UEX, INVENTORY
-  and COMBAT); the nav bar and settings window stay fully visible while you
+  (30–100%) for the content panels (mining, ore finder, HAULING, UEX, INVENTORY,
+  COMBAT and NOTES); the nav bar and settings window stay fully visible while you
   adjust opacity. The **VISIBLE/HIDDEN** button beside *Shown in screenshots and
   streams* controls whether the windows appear in screenshots, OBS and screen
   shares (stored as `capture_exclude`).
@@ -815,7 +829,7 @@ Settings are saved to `%APPDATA%\Citizen Assistant\config.json`, next to the ore
 cache (`where_to_mine.json`), inventory notes (`inventory.json`), the planner
 route cache (`routes_cache.json`) and the workflow caches (`active_run.json`,
 `workflow_wallet.json`). Panel positions (mining, ore finder, HAULING, UEX,
-INVENTORY, COMBAT) and the nav bar's visibility are also stored in
+INVENTORY, COMBAT, NOTES) and the nav bar's visibility are also stored in
 `config.json` when the app quits normally, so they reopen where you left them.
 
 > If the venv was built from the Microsoft Store build of Python, Windows
@@ -866,6 +880,7 @@ third-party overlay is still your own risk to take.
 | Ore finder list is empty | No internet, or scminer.rocks is down. Press `↻`; the cache is used when available. |
 | Ore finder shows `OFFLINE` | Same as above — the data on screen is the last successful sync. |
 | Combat tracker shows no events | Confirm `Game.log` is being written, or set `SC_GAME_LOG` to its path. Combat log formats are patch-dependent; update the parser patterns if a patch changes them. |
+| NOTES says `NOT SAVED` | The footer shows the reason (normally a permissions problem on `%APPDATA%`). The text is still in the editor — copy it out before closing. A hard crash can lose the last 700 ms of typing, which is the autosave delay. |
 | Blueprint tracker misses an unlock | Confirm the log contains `<SHUDEvent_OnNotification> Added notification "Received Blueprint: ...`; set `SC_GAME_LOG` to the right `Game.log`. If a patch changes the wording, pass custom `BlueprintLogParser` patterns. Delete `unlocked_blueprints.json` only if you want to reset new-vs-duplicate detection. |
 | Bar/scanner hidden behind a browser | It re-asserts topmost every 2 s; if it still loses, run the game borderless, not exclusive fullscreen. |
 | F3/F4 do nothing while the game is focused | Fixed in v1.2.1 by polling `GetAsyncKeyState` alongside `RegisterHotKey`, because exclusive fullscreen stops `WM_HOTKEY` reaching a background thread. If it still fails, run the game borderless. |
