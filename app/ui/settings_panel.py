@@ -1,11 +1,12 @@
 """Settings window: capture region, scanning controls and data info."""
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import QRectF, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSlider,
                                QVBoxLayout, QWidget)
 
+from .. import updater
 from ..version import label as build_label
 from . import theme
 
@@ -20,6 +21,27 @@ def _section(text: str) -> QLabel:
     label.setFont(theme.font(8, QFont.Weight.Bold, spacing=1.4))
     label.setStyleSheet(theme.qss("color: rgba(136,152,170,0.98); background: transparent;"))
     return label
+
+
+class _UpdateWorker(QThread):
+    """Check or apply on a thread: both touch the network."""
+
+    done = Signal(str, str)      # mode, version ("" when already current)
+    failed = Signal(str)
+
+    def __init__(self, mode: str, parent=None):
+        super().__init__(parent)
+        self._mode = mode
+
+    def run(self) -> None:  # noqa: D102
+        try:
+            if self._mode == "check":
+                _installed, published, newer = updater.newest()
+                self.done.emit("check", published if newer else "")
+            else:
+                self.done.emit("apply", updater.apply())
+        except Exception as exc:      # surface it, never take the app down
+            self.failed.emit(str(exc))
 
 
 def _slider() -> QSlider:
@@ -99,6 +121,8 @@ class SettingsPanel(QWidget):
         self.setFixedWidth(theme.px(WIDTH))
 
         self._drag_from = None
+        self._pending_version = ""
+        self._update_worker: _UpdateWorker | None = None
         self._build()
         self.adjustSize()
 
@@ -271,6 +295,26 @@ class SettingsPanel(QWidget):
         root.addLayout(capture_row)
         root.addSpacing(theme.px(8))
 
+        # Update ------------------------------------------------------
+        root.addWidget(_section("Update"))
+        update_row = QHBoxLayout()
+        update_row.setContentsMargins(theme.px(0), theme.px(0), theme.px(0), theme.px(0))
+        update_row.setSpacing(theme.px(8))
+        self.update_hint = QLabel(f"Installed {build_label()}")
+        self.update_hint.setFont(theme.font(7))
+        self.update_hint.setWordWrap(True)
+        self.update_hint.setStyleSheet(theme.qss(
+            "color: rgba(130,148,166,0.9); background: transparent;"))
+        self.update_btn = _button("CHECK")
+        self.update_btn.setFixedWidth(theme.px(82))
+        self.update_btn.setToolTip(
+            "Compare this install with GitHub, then copy the newest files")
+        self.update_btn.clicked.connect(self._on_update_clicked)
+        update_row.addWidget(self.update_hint, 1)
+        update_row.addWidget(self.update_btn)
+        root.addLayout(update_row)
+        root.addSpacing(theme.px(8))
+
         # Capture region ----------------------------------------------
         root.addWidget(_section("Signature capture region"))
         region_row = QHBoxLayout()
@@ -401,6 +445,53 @@ class SettingsPanel(QWidget):
             "Shown in screenshots and streams" if checked
             else "Hidden from screenshots and streams")
         self.capture_toggled.emit(checked)
+
+    # -- update --------------------------------------------------------
+    def _on_update_clicked(self) -> None:
+        if self._update_worker is not None and self._update_worker.isRunning():
+            return
+        if updater.is_frozen():
+            self.update_hint.setText(
+                "EXE build: download a new copy to update")
+            return
+
+        mode = "apply" if self._pending_version else "check"
+        self.update_btn.setEnabled(False)
+        self.update_btn.setText("…")
+        self.update_hint.setText(
+            "Copying the newest files…" if mode == "apply" else "Checking GitHub…")
+
+        worker = _UpdateWorker(mode, self)
+        worker.done.connect(self._on_update_done)
+        worker.failed.connect(self._on_update_failed)
+        worker.finished.connect(self._on_update_finished)
+        self._update_worker = worker
+        worker.start()
+
+    def _on_update_done(self, mode: str, value: str) -> None:
+        if mode == "check":
+            if value:
+                self._pending_version = value
+                self.update_hint.setText(f"v{value} available")
+                self.update_btn.setText("UPDATE")
+            else:
+                self.update_hint.setText(f"Up to date · {build_label()}")
+                self.update_btn.setText("CHECK")
+            return
+
+        self._pending_version = ""
+        self.update_hint.setText(f"Updated to v{value} · restarting…")
+        self.update_btn.setText("CHECK")
+        # The new files are already on disk; only a restart loads them.
+        self.restart_requested.emit()
+
+    def _on_update_failed(self, message: str) -> None:
+        self.update_hint.setText(f"Update failed: {message}")
+        self.update_btn.setText("UPDATE" if self._pending_version else "CHECK")
+
+    def _on_update_finished(self) -> None:
+        self.update_btn.setEnabled(True)
+        self._update_worker = None
 
     def _copy_btc(self) -> None:
         if not BTC_ADDRESS:

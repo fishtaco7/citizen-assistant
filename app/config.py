@@ -79,6 +79,7 @@ DEFAULTS: dict = {
     "orefinder_pos": None,
     "hauling_pos": None,
     "inventory_pos": None,
+    "uex_pos": None,
     "combat_pos": None,
     "hauling_cargo": 32,              # SCU used for trip-profit maths
     "hauling_commodity": 0,           # 0 = all commodities / top routes

@@ -708,6 +708,30 @@ combat and blueprint/inventory trackers additionally tail Star Citizen's own
 events. They do **not** read game memory, inject code, synthesise input, or
 modify the game in any way.
 
+## UEX
+
+`UEX` searches the player marketplace at <https://uexcorp.space/marketplace/>
+for items other players are selling.
+
+- Type in the search box to filter by item name (or seller). Matching is
+  case-insensitive and instant: the board is fetched once and filtered locally,
+  so typing does not hit the network.
+- **SELL / BUY** chips switch between ads offering an item and ads looking for
+  one; the header counts both.
+- Rows show item, price in aUEC, quantity, seller and age, newest first.
+  Expired, sold and inactive ads are dropped when the board is read — the site
+  keeps a lot of them visible.
+- Double-click a row to open the marketplace in your browser.
+- `↻` re-syncs. The board is cached for five minutes in
+  `%APPDATA%\Citizen Assistant\marketplace_cache.json`, so reopening the tab is
+  instant and an offline start still shows the previous board.
+
+The public API has used more than one collection name for this data, so
+`app/marketplace.py` tries `marketplace`, `marketplace_ads` and
+`marketplace_listings` in order and accepts a small set of field aliases. If
+UEX renames something, the tables at the top of that file are the only place to
+change.
+
 ## INVENTORY
 
 `INVENTORY` is a manual stash notebook, not a live game-inventory reader. Use it
@@ -739,9 +763,9 @@ application shortcuts while you type.
 - **SUPPORT** — "Like my overlay? Buy me a coffee (or a ship)!" with a BTC
   address and copy button.
 - **APPEARANCE** — UI scale (75–150% in 5% steps) and opacity slider
-  (30–100%) for the content panels (mining, ore finder, HAULING, INVENTORY and
-  COMBAT); the nav bar and settings window stay fully visible while you adjust
-  opacity. **SCREENSHOTS → VISIBLE/HIDDEN** controls whether the windows appear
+  (30–100%) for the content panels (mining, ore finder, HAULING, UEX, INVENTORY
+  and COMBAT); the nav bar and settings window stay fully visible while you
+  adjust opacity. **SCREENSHOTS → VISIBLE/HIDDEN** controls whether the windows appear
   in screenshots, OBS and screen shares (stored as `capture_exclude`).
   The scale is applied by the overlay itself (`app/ui/theme.py`) rather than by
   Qt's `QT_SCALE_FACTOR`, because that variable only changes widget geometry on
@@ -754,6 +778,15 @@ application shortcuts while you type.
 - **PAUSE / RESUME** — stop OCR without closing anything.
 - **SHOW PREVIEW** — show the raw pixels being read; useful for checking the box.
 - **VOICE** — enable/disable spoken announcements and set their volume (see *Voice* above).
+- **UPDATE** — shows the installed build and a **CHECK** button. Checking reads
+  `app/version.py` from GitHub and compares it with this copy; when something
+  newer exists the button becomes **UPDATE**, which downloads the `main` branch
+  archive and copies `app/`, `tools/`, the launchers and the requirements over
+  this folder, then restarts the overlay. Settings, notes and logs live in
+  `%APPDATA%\Citizen Assistant` and are never touched, and `opencode.jsonc` is
+  deliberately left alone. It does not work for the prebuilt EXE — a running
+  `.exe` cannot replace itself, so that build is updated by downloading a new
+  copy.
 - **RELOAD** — re-read `app/data/signatures.json` without restarting.
 
 Advanced scan tuning lives in `config.json`: `poll_ms` controls the capture
@@ -822,6 +855,7 @@ third-party overlay is still your own risk to take.
 | Start menu opens an old version | Run `install.bat` from the new folder — it repoints the shortcuts and deletes stale ones. Then compare the build stamp in `⚙`. |
 | `⚙` shows no build stamp or no **SCREENSHOTS** row | You are running a copy from before those features. Quit it from the tray, then start `run.bat` inside the folder you downloaded. |
 | COMBAT does nothing and no panel appears | Usually an older build without the on-screen clamp. Check the build stamp before changing anything else. |
+| UEX shows no ads | Press `↻`. If the status stays `OFFLINE`, the public API is not serving the marketplace at that path — check the endpoint names at the top of `app/marketplace.py` against the current UEX API docs. |
 | Scanner shows `UNKNOWN` | The number is not in the table, or OCR dropped a digit. Check the raw value shown. |
 | Nothing appears in screenshots | Open `⚙` → **SCREENSHOTS** and set it to **VISIBLE**. If it already says VISIBLE, your build predates the toggle: run with `--capture-visible`. |
 | Scanner stops reading after making screenshots visible | A panel now overlaps the calibrated scan box, so the scanner captures the overlay instead of the HUD. Move that panel away from the box, or set **SCREENSHOTS** back to **HIDDEN** while mining. |

@@ -32,6 +32,7 @@ from .ui.navbar import NavBar
 from .ui.orefinder_panel import OreFinderPanel
 from .ui.region_selector import RegionSelector
 from .ui.settings_panel import SettingsPanel
+from .ui.uex_panel import UexPanel
 from .ui import theme
 from .version import label as version_label
 from .voice import Voice, spoken_text
@@ -46,6 +47,8 @@ TOOLS = [
      "hint": "Where to mine each ore, live from scminer.rocks"},
     {"id": "hauling", "label": "HAULING", "enabled": True,
      "hint": "Trade routes, hauling contracts and the PPM planner"},
+    {"id": "uex", "label": "UEX", "enabled": True,
+     "hint": "Search the UEX player marketplace for items on sale"},
     {"id": "inventory", "label": "INVENTORY", "enabled": True,
      "hint": "Remember loot and supplies left at other stations"},
     {"id": "combat", "label": "COMBAT", "enabled": True,
@@ -297,6 +300,7 @@ class OverlayApp(QObject):
         self.orefinder = OreFinderPanel(self.ore_data)
         self.hauling = HaulingPanel()
         self.inventory = InventoryPanel()
+        self.uex = UexPanel()
 
         # Headless combat feed: the tracker stays Qt-free; this panel only
         # renders the structured events it forwards.
@@ -343,6 +347,7 @@ class OverlayApp(QObject):
         self.hauling.close_requested.connect(self._on_hauling_close)
         self.inventory.close_requested.connect(self._on_inventory_close)
         self.combat_panel.close_requested.connect(self._on_combat_close)
+        self.uex.close_requested.connect(self._on_uex_close)
         self.combat_event.connect(
             self.combat_panel.add_event,
             Qt.ConnectionType.QueuedConnection)
@@ -468,6 +473,13 @@ class OverlayApp(QObject):
         # which made COMBAT look like it opened nothing. Pull it back on screen.
         self.combat_panel.clamp_to_screen()
 
+        uex_pos = self.cfg.get("uex_pos")
+        if isinstance(uex_pos, list) and len(uex_pos) == 2:
+            self.uex.move(int(uex_pos[0]), int(uex_pos[1]))
+        else:
+            self.uex.place_default(self.panel)
+        self.uex.clamp_to_screen()
+
         # macOS has no permission-free global hotkey API. Register application
         # shortcuts so F3/F4 still work whenever one of our windows has focus;
         # the tray menu is the always-available fallback.
@@ -500,9 +512,9 @@ class OverlayApp(QObject):
                 win32.make_overlay_window(widget)
             except Exception:
                 pass
-        # HAULING and INVENTORY have text controls, so they must be able to
-        # take keyboard focus.
-        for widget in (self.hauling, self.inventory):
+        # HAULING, INVENTORY and UEX have text controls, so they must be able
+        # to take keyboard focus.
+        for widget in (self.hauling, self.inventory, self.uex):
             try:
                 win32.make_focusable_window(widget)
             except Exception:
@@ -518,7 +530,8 @@ class OverlayApp(QObject):
     def _apply_capture_visibility(self) -> None:
         show = self._capture_visible()
         for widget in (self.nav, self.panel, self.settings, self.orefinder,
-                       self.hauling, self.inventory, self.combat_panel):
+                       self.hauling, self.inventory, self.uex,
+                       self.combat_panel):
             try:
                 if show:
                     win32.allow_capture(widget)
@@ -538,7 +551,8 @@ class OverlayApp(QObject):
 
     def _assert_topmost(self) -> None:
         for widget in (self.nav, self.panel, self.orefinder, self.hauling,
-                       self.settings, self.inventory, self.combat_panel):
+                       self.settings, self.inventory, self.uex,
+                       self.combat_panel):
             if not widget.isVisible():
                 continue
             try:
@@ -565,6 +579,7 @@ class OverlayApp(QObject):
         self.orefinder.hide()
         self.hauling.hide()
         self.inventory.hide()
+        self.uex.hide()
         self.combat_panel.hide()
         self.nav.set_active(None)
 
@@ -577,6 +592,8 @@ class OverlayApp(QObject):
             self._toggle_hauling()
         elif tool_id == "inventory":
             self._toggle_inventory()
+        elif tool_id == "uex":
+            self._toggle_uex()
         elif tool_id == "combat":
             self._toggle_combat()
 
@@ -590,6 +607,8 @@ class OverlayApp(QObject):
             self._toggle_hauling()
         elif tool_id == "inventory" and not self.inventory.isVisible():
             self._toggle_inventory()
+        elif tool_id == "uex" and not self.uex.isVisible():
+            self._toggle_uex()
         elif tool_id == "combat" and not self.combat_panel.isVisible():
             self._toggle_combat()
         elif tool_id == "settings" and not self.settings.isVisible():
@@ -597,6 +616,7 @@ class OverlayApp(QObject):
 
     def _sync_nav_active(self) -> None:
         for tool_id, widget in (("hauling", self.hauling),
+                                ("uex", self.uex),
                                 ("inventory", self.inventory),
                                 ("combat", self.combat_panel),
                                 ("orefinder", self.orefinder),
@@ -674,6 +694,21 @@ class OverlayApp(QObject):
 
     def _on_inventory_close(self) -> None:
         self.inventory.hide()
+        self._sync_nav_active()
+
+    def _toggle_uex(self) -> None:
+        if self.uex.isVisible():
+            self.uex.hide()
+            self._sync_nav_active()
+            return
+        self.uex.clamp_to_screen()
+        self.uex.show()
+        self.uex.raise_()
+        self.nav.set_active("uex")
+        self._assert_topmost()
+
+    def _on_uex_close(self) -> None:
+        self.uex.hide()
         self._sync_nav_active()
 
     def _toggle_combat(self) -> None:
@@ -930,6 +965,7 @@ class OverlayApp(QObject):
             self.cfg["inventory_pos"] = [self.inventory.x(), self.inventory.y()]
             self.cfg["combat_pos"] = [self.combat_panel.x(),
                                       self.combat_panel.y()]
+            self.cfg["uex_pos"] = [self.uex.x(), self.uex.y()]
             self.cfg["hauling_cargo"] = self.hauling.capacity()
             self.cfg["hauling_commodity"] = self.hauling.current_commodity()
             self.cfg["nav_visible"] = self.nav.shown
@@ -1032,8 +1068,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--capture-visible", action="store_true",
                         help="do not hide the overlay from screen capture (debugging/streaming)")
     parser.add_argument("--open", choices=("mining", "orefinder",
-                                           "hauling", "inventory", "combat",
-                                           "settings"),
+                                           "hauling", "inventory", "uex",
+                                           "combat", "settings"),
                         help="open a tool at startup (debugging)")
     parser.add_argument("--restart", action="store_true",
                         help=argparse.SUPPRESS)
