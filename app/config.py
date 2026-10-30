@@ -69,6 +69,9 @@ DEFAULTS: dict = {
     "show_debug_preview": False,
     "voice_enabled": True,             # speak the ore name when a scan locks
     "voice_volume": 0.8,               # 0.0 - 1.0
+    # Forget the last spoken rock after this many seconds without a scan.
+    # Brief HUD flicker keeps the dedupe, so the same rock is not re-announced.
+    "voice_idle_reset_seconds": 12.0,
     "ui_scale": 1.0,                   # 0.75 - 1.5, applied on next launch
     "overlay_opacity": 1.0,            # 0.3 - 1.0, applies to overlay windows
     "nav_visible": True,
@@ -80,7 +83,11 @@ DEFAULTS: dict = {
     "hauling_cargo": 32,              # SCU used for trip-profit maths
     "hauling_commodity": 0,           # 0 = all commodities / top routes
     "hauling_selection_version": 2,   # migration marker for the new default
-    "capture_exclude": True,
+    # True keeps the overlay out of screenshots/streams via
+    # WDA_EXCLUDEFROMCAPTURE.  Visible by default so a normal screenshot or
+    # screen share includes the panels; toggle it in Settings for stream privacy.
+    "capture_exclude": False,
+    "capture_visibility_version": 1,   # migration marker for the visible default
 }
 
 
@@ -130,6 +137,17 @@ class Config:
                 if old_poll == 250:
                     data["poll_ms"] = 125
                 data["scan_tuning_version"] = 1
+            # Capture exclusion used to be on by default with no UI toggle, so
+            # existing installs could not screenshot the overlay at all.  Flip
+            # that old default once; the new Settings toggle still lets anyone
+            # hide the overlay from streams afterwards.
+            try:
+                capture_version = int(data.get("capture_visibility_version", 0))
+            except (TypeError, ValueError):
+                capture_version = 0
+            if capture_version < 1:
+                data["capture_exclude"] = False
+                data["capture_visibility_version"] = 1
             return cls(data)
         except (FileNotFoundError, json.JSONDecodeError, OSError):
             return cls()

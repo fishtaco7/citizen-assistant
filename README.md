@@ -200,9 +200,10 @@ load on the scanner thread.
   `StarCitizen`, `Roberts Space Industries\StarCitizen` and `Games\StarCitizen`
   on every fixed drive. `LIVE`, `PTU`, `EPTU` and `HOTFIX` are all checked. Set
   `SC_GAME_LOG` to a full path to override the search.
-- The overlay windows are marked `WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` and
-  excluded from capture, so they never steal focus from the game and never show
-  up in OBS or the game's own screenshots.
+- The overlay windows are marked `WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW`, so they
+  never steal focus from the game. They are **visible in screenshots and
+  streams by default**; `⚙` → **SCREENSHOTS → HIDDEN** hides them from capture
+  (OBS, the game's own screenshots) when you want that instead.
 - The OCR path needs `opencv-python` and `rapidocr-onnxruntime` from
   `requirements.txt`. `setup.bat` installs both into `C:\scov`.
 
@@ -285,8 +286,12 @@ ore and the number of rocks:
 
 - Only **exact** signature matches are spoken. A fuzzy match is usually an OCR
   misread, and saying the wrong ore is worse than saying nothing.
-- Each rock is announced once. The same number staying on screen does not repeat,
-  but losing the scan for two seconds (or resuming from pause) announces it again.
+- Each rock is announced once. Re-reading the same signature, a one-digit OCR
+  jitter, or the scan HUD dropping and re-acquiring the same rock does not repeat
+  the announcement. A genuinely different signature (a new rock) still speaks,
+  even when it is the same ore. The remembered rock is only forgotten after
+  `voice_idle_reset_seconds` (default `12`) without a scan, or when pausing and
+  resuming.
 - `⚙` → **Voice** has an **ON/OFF** button and a volume slider; the choice is
   saved as `voice_enabled` and `voice_volume` (0.0–1.0).
 
@@ -718,7 +723,8 @@ application shortcuts while you type.
 - **APPEARANCE** — UI scale (75–150% in 5% steps) and opacity slider
   (30–100%) for the content panels (mining, ore finder, HAULING, INVENTORY and
   COMBAT); the nav bar and settings window stay fully visible while you adjust
-  opacity.
+  opacity. **SCREENSHOTS → VISIBLE/HIDDEN** controls whether the windows appear
+  in screenshots, OBS and screen shares (stored as `capture_exclude`).
   The scale is applied by the overlay itself (`app/ui/theme.py`) rather than by
   Qt's `QT_SCALE_FACTOR`, because that variable only changes widget geometry on
   Windows/Linux — on macOS it was ignored, which is why the slider used to do
@@ -796,7 +802,8 @@ third-party overlay is still your own risk to take.
 | Bar/scanner hidden behind a browser | It re-asserts topmost every 2 s; if it still loses, run the game borderless, not exclusive fullscreen. |
 | Bar appears twice | Two copies are running. Kill the extra `python`/`pythonw` process. |
 | Scanner shows `UNKNOWN` | The number is not in the table, or OCR dropped a digit. Check the raw value shown. |
-| Nothing appears in screenshots | Expected: windows use `WDA_EXCLUDEFROMCAPTURE` (Windows 10 2004+). On older builds they fall back to `WDA_MONITOR`, which shows them on screen but renders them black in captures. Add `--capture-visible` when developing. |
+| Nothing appears in screenshots | Open `⚙` → **SCREENSHOTS** and set it to **VISIBLE**. If it already says VISIBLE, your build predates the toggle: run with `--capture-visible`. |
+| Scanner stops reading after making screenshots visible | A panel now overlaps the calibrated scan box, so the scanner captures the overlay instead of the HUD. Move that panel away from the box, or set **SCREENSHOTS** back to **HIDDEN** while mining. |
 | UI scale slider seems to do nothing | It needs a restart: press **RESTART** next to the slider (or quit and start again). The hint turns amber while the chosen scale is not active yet. |
 | `run.bat` says Python was not found | Install Python 3.11+ (64-bit) and tick “Add python.exe to PATH”, or run `setup.bat` once to create `C:\scov`. |
 | A black console flashes when a refinery order completes | Fixed: the speech/WAV helpers start PowerShell with `CREATE_NO_WINDOW`. If you see it, you are running an older copy. |

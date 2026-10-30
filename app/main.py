@@ -277,6 +277,7 @@ class OverlayApp(QObject):
         self.data = MiningData()
         self.voice = Voice()
         self._spoken_key: tuple | None = None
+        self._spoken_value: int | None = None
         self._selector: RegionSelector | None = None
         self._recent: deque[int] = deque(maxlen=max(1, int(cfg["stability_reads"])))
         self._last_value: int | None = None
@@ -348,6 +349,7 @@ class OverlayApp(QObject):
         self.settings.voice_toggled.connect(self._on_voice)
         self.settings.volume_changed.connect(self._on_volume)
         self.settings.opacity_changed.connect(self._on_opacity)
+        self.settings.capture_toggled.connect(self._on_capture_visible)
         self.settings.ui_scale_changed.connect(self._on_ui_scale)
         self.settings.restart_requested.connect(self.restart)
         self.settings.reload_requested.connect(self._reload_data)
@@ -369,6 +371,10 @@ class OverlayApp(QObject):
         act_inventory = QAction("Inventory notes", self)
         act_inventory.triggered.connect(self._toggle_inventory)
         menu.addAction(act_inventory)
+
+        act_combat = QAction("Combat feed", self)
+        act_combat.triggered.connect(self._toggle_combat)
+        menu.addAction(act_combat)
 
         menu.addSeparator()
         act_region = QAction("Select capture region…", self)
@@ -423,6 +429,8 @@ class OverlayApp(QObject):
         self.settings.set_volume(round(float(self.cfg["voice_volume"]) * 100))
         self.settings.set_opacity(round(self._opacity_level() * 100))
         self.settings.set_ui_scale(round(self._ui_scale_level() * 100))
+        self.settings.set_capture_visible(self._capture_visible(),
+                                          locked=self.capture_visible)
         self.settings.set_voice_hint(
             "" if self.voice.available else "No speech engine available")
 
@@ -453,6 +461,9 @@ class OverlayApp(QObject):
             self.combat_panel.move(int(combat_pos[0]), int(combat_pos[1]))
         else:
             self.combat_panel.place_default(self.panel)
+        # A saved position can belong to a monitor that is no longer attached,
+        # which made COMBAT look like it opened nothing. Pull it back on screen.
+        self.combat_panel.clamp_to_screen()
 
         # macOS has no permission-free global hotkey API. Register application
         # shortcuts so F3/F4 still work whenever one of our windows has focus;
@@ -484,8 +495,6 @@ class OverlayApp(QObject):
                        self.combat_panel):
             try:
                 win32.make_overlay_window(widget)
-                if self.cfg["capture_exclude"] and not self.capture_visible:
-                    win32.exclude_from_capture(widget)
             except Exception:
                 pass
         # HAULING and INVENTORY have text controls, so they must be able to
@@ -493,11 +502,36 @@ class OverlayApp(QObject):
         for widget in (self.hauling, self.inventory):
             try:
                 win32.make_focusable_window(widget)
-                if self.cfg["capture_exclude"] and not self.capture_visible:
+            except Exception:
+                pass
+        self._apply_capture_visibility()
+        self._assert_topmost()
+
+    def _capture_visible(self) -> bool:
+        """Whether the overlay should appear in screenshots and screen shares."""
+        return bool(self.capture_visible
+                    or not self.cfg.get("capture_exclude", False))
+
+    def _apply_capture_visibility(self) -> None:
+        show = self._capture_visible()
+        for widget in (self.nav, self.panel, self.settings, self.orefinder,
+                       self.hauling, self.inventory, self.combat_panel):
+            try:
+                if show:
+                    win32.allow_capture(widget)
+                else:
                     win32.exclude_from_capture(widget)
             except Exception:
                 pass
-        self._assert_topmost()
+
+    def _on_capture_visible(self, visible: bool) -> None:
+        # --capture-visible is a development override: keep the toggle honest.
+        if self.capture_visible:
+            self.settings.set_capture_visible(True, locked=True)
+            return
+        self.cfg["capture_exclude"] = not bool(visible)
+        self.cfg.save()
+        self._apply_capture_visibility()
 
     def _assert_topmost(self) -> None:
         for widget in (self.nav, self.panel, self.orefinder, self.hauling,
@@ -644,6 +678,7 @@ class OverlayApp(QObject):
             self.combat_panel.hide()
             self._sync_nav_active()
             return
+        self.combat_panel.clamp_to_screen()
         self.combat_panel.show()
         self.combat_panel.raise_()
         self.combat_panel.scroll.verticalScrollBar().setValue(0)
@@ -679,6 +714,7 @@ class OverlayApp(QObject):
         elif not paused:
             # Re-announce whatever is on screen when scanning resumes.
             self._spoken_key = None
+            self._spoken_value = None
 
     def _on_debug(self, enabled: bool) -> None:
         self.cfg["show_debug_preview"] = enabled
@@ -691,6 +727,7 @@ class OverlayApp(QObject):
         if enabled:
             # Announce the rock that is already locked.
             self._spoken_key = None
+            self._spoken_value = None
         self.settings.set_voice_hint(
             "" if self.voice.available or not enabled
             else "No speech engine available")
@@ -765,6 +802,8 @@ class OverlayApp(QObject):
         self._recent.clear()
         self._last_value = None
         self._last_matches = []
+        self._spoken_key = None
+        self._spoken_value = None
         self._scan_sig_reset()
 
         self.settings.set_region(region)
@@ -820,10 +859,29 @@ class OverlayApp(QObject):
         # Announce only exact signatures: a fuzzy match is usually an OCR
         # misread, and saying the wrong ore is worse than saying nothing.
         if top is not None and top.exact:
-            key = (value, top.kind, top.name, top.count)
-            if key != self._spoken_key:
-                self._spoken_key = key
-                self.voice.say(spoken_text(top.label, top.count))
+            self._announce_signature(value, top)
+
+    def _announce_signature(self, value: int, top) -> None:
+        """Speak a locked rock once, not on every read while flying at it.
+
+        The scan HUD can drop and re-acquire the same rock, and OCR can jitter
+        the signature by a digit.  Dedupe on the identified ore and treat a
+        near-identical value as the same target, so approaching one rock does
+        not repeat the announcement.  A genuinely different signature still
+        speaks even when the ore type is the same.
+        """
+        key = (top.kind, top.name, top.count)
+        same_target = (
+            key == self._spoken_key
+            and self._spoken_value is not None
+            and abs(int(value) - int(self._spoken_value))
+            <= max(2, int(round(abs(int(self._spoken_value)) * 0.02)))
+        )
+        if same_target:
+            return
+        self._spoken_key = key
+        self._spoken_value = int(value)
+        self.voice.say(spoken_text(top.label, top.count))
 
     def _on_scan_error(self, message: str) -> None:
         self.panel.set_state("error")
@@ -832,10 +890,22 @@ class OverlayApp(QObject):
     def _check_freshness(self) -> None:
         if self._paused:
             return
-        if self._last_value is not None and time.monotonic() - self._last_good_at > 2.0:
-            self.panel.set_state("idle")
-            self.panel.set_scan(self._last_value, 0.0, "lost", self._last_matches)
+        if self._last_value is None:
+            return
+        idle = time.monotonic() - self._last_good_at
+        if idle <= 2.0:
+            return
+        self.panel.set_state("idle")
+        self.panel.set_scan(self._last_value, 0.0, "lost", self._last_matches)
+        # Keep the spoken signature through brief flicker; only forget it after
+        # a real break so a new rock of the same type can announce again.
+        try:
+            reset_after = float(self.cfg.get("voice_idle_reset_seconds", 12.0))
+        except (TypeError, ValueError):
+            reset_after = 12.0
+        if idle >= max(2.0, reset_after):
             self._spoken_key = None
+            self._spoken_value = None
 
     # ------------------------------------------------------------------
     def _reload_data(self) -> None:

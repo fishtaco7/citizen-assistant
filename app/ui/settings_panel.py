@@ -84,6 +84,7 @@ class SettingsPanel(QWidget):
     voice_toggled = Signal(bool)
     volume_changed = Signal(int)
     opacity_changed = Signal(int)
+    capture_toggled = Signal(bool)
     ui_scale_changed = Signal(int)
     restart_requested = Signal()
 
@@ -234,6 +235,30 @@ class SettingsPanel(QWidget):
         opacity_row.addWidget(self.opacity_slider, 1)
         opacity_row.addWidget(self.opacity_label)
         root.addLayout(opacity_row)
+
+        capture_row = QHBoxLayout()
+        capture_row.setContentsMargins(theme.px(0), theme.px(0),
+                                       theme.px(0), theme.px(0))
+        capture_row.setSpacing(theme.px(8))
+        capture_name = QLabel("SCREENSHOTS")
+        capture_name.setFixedWidth(theme.px(58))
+        capture_name.setFont(theme.font(8, QFont.Weight.DemiBold, spacing=0.8))
+        capture_name.setStyleSheet(theme.qss(
+            "color: rgba(150,166,182,0.95); background: transparent;"))
+        self.capture_btn = _button("VISIBLE", checkable=True)
+        self.capture_btn.setFixedWidth(theme.px(82))
+        self.capture_btn.setChecked(True)
+        self.capture_btn.setToolTip(
+            "Include the overlay in screenshots and screen shares")
+        self.capture_btn.toggled.connect(self._on_capture)
+        self.capture_hint = QLabel("Shown in screenshots and streams")
+        self.capture_hint.setFont(theme.font(7))
+        self.capture_hint.setStyleSheet(theme.qss(
+            "color: rgba(130,148,166,0.9); background: transparent;"))
+        capture_row.addWidget(capture_name)
+        capture_row.addWidget(self.capture_btn)
+        capture_row.addWidget(self.capture_hint, 1)
+        root.addLayout(capture_row)
         root.addSpacing(theme.px(8))
 
         # Capture region ----------------------------------------------
@@ -360,6 +385,13 @@ class SettingsPanel(QWidget):
         self.opacity_label.setText(f"{value}%")
         self.opacity_changed.emit(value)
 
+    def _on_capture(self, checked: bool) -> None:
+        self.capture_btn.setText("VISIBLE" if checked else "HIDDEN")
+        self.capture_hint.setText(
+            "Shown in screenshots and streams" if checked
+            else "Hidden from screenshots and streams")
+        self.capture_toggled.emit(checked)
+
     def _copy_btc(self) -> None:
         if not BTC_ADDRESS:
             return
@@ -409,6 +441,20 @@ class SettingsPanel(QWidget):
             self.opacity_slider.setValue(value)
             self.opacity_slider.blockSignals(False)
         self.opacity_label.setText(f"{value}%")
+
+    def set_capture_visible(self, visible: bool, locked: bool = False) -> None:
+        if self.capture_btn.isChecked() != bool(visible):
+            self.capture_btn.blockSignals(True)
+            self.capture_btn.setChecked(bool(visible))
+            self.capture_btn.blockSignals(False)
+        self.capture_btn.setText("VISIBLE" if visible else "HIDDEN")
+        self.capture_btn.setEnabled(not locked)
+        if locked:
+            self.capture_hint.setText("Forced by --capture-visible")
+        else:
+            self.capture_hint.setText(
+                "Shown in screenshots and streams" if visible
+                else "Hidden from screenshots and streams")
 
     def set_ui_scale(self, percent: int) -> None:
         value = max(75, min(150, int(percent)))
