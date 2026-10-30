@@ -80,6 +80,9 @@ DEFAULTS: dict = {
     "hauling_pos": None,
     "inventory_pos": None,
     "uex_pos": None,
+    # Empty = try every known marketplace collection and keep the largest.
+    # Set it (e.g. "marketplace_ads") to pin one when UEX renames a collection.
+    "uex_marketplace_endpoint": "",
     "combat_pos": None,
     "open_tools": [],
     "hauling_cargo": 32,              # SCU used for trip-profit maths

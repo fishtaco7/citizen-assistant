@@ -207,9 +207,15 @@ def _sort(ads: list[Ad]) -> list[Ad]:
 
 
 class MarketplaceData:
-    """Current board, newest first, filtered to ads that are still live."""
+    """Current board, newest first, filtered to ads that are still live.
 
-    def __init__(self):
+    ``endpoint`` overrides the collection name.  It is read from
+    ``uex_marketplace_endpoint`` in ``config.json``, so if UEX renames the
+    collection the fix is a settings edit rather than a new build.
+    """
+
+    def __init__(self, endpoint: str | None = None):
+        self._endpoint = (endpoint or "").strip().strip("/")
         self.ads: list[Ad] = []
         self.source = ""
         self.error = ""
@@ -247,7 +253,12 @@ class MarketplaceData:
         best_live: list[dict] = []
         best_rows = 0
 
-        for name in ENDPOINTS:
+        order = list(ENDPOINTS)
+        if self._endpoint:
+            order = ([self._endpoint]
+                     + [name for name in ENDPOINTS if name != self._endpoint])
+
+        for name in order:
             try:
                 payload = _get(f"{API}/{name}")
             except Exception as exc:        # 404, offline, rate limited
@@ -259,6 +270,11 @@ class MarketplaceData:
                 continue
 
             live = [row for row in rows if _is_active(row)]
+            if self._endpoint and name == self._endpoint and live:
+                # An explicit endpoint wins outright; the rest are only a
+                # fallback for when that one disappears.
+                best_name, best_live, best_rows = name, live, len(rows)
+                break
             if len(live) > len(best_live):
                 best_name, best_live, best_rows = name, live, len(rows)
 

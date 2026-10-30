@@ -115,7 +115,8 @@ class _AdRow(QWidget):
 class UexPanel(QWidget):
     close_requested = Signal()
 
-    def __init__(self, data: MarketplaceData | None = None, parent=None):
+    def __init__(self, data: MarketplaceData | None = None,
+                 endpoint: str | None = None, parent=None):
         super().__init__(None, Qt.WindowType.FramelessWindowHint
                          | Qt.WindowType.WindowStaysOnTopHint
                          | Qt.WindowType.Tool)
@@ -123,7 +124,7 @@ class UexPanel(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
         self.setFixedSize(theme.px(WIDTH), theme.px(HEIGHT))
 
-        self._data = data or MarketplaceData()
+        self._data = data or MarketplaceData(endpoint)
         self._side = "SELL"
         self._query = ""
         self._worker: _Fetch | None = None

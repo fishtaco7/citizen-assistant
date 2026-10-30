@@ -732,10 +732,21 @@ for items other players are selling.
   instant and an offline start still shows the previous board.
 
 The public API has used more than one collection name for this data, so
-`app/marketplace.py` tries `marketplace`, `marketplace_ads` and
-`marketplace_listings` in order and accepts a small set of field aliases. If
-UEX renames something, the tables at the top of that file are the only place to
-change.
+`app/marketplace.py` asks `marketplace`, `marketplace_ads` and
+`marketplace_listings` and keeps **whichever returns the most rows**, so a small
+response cannot shadow the full board. The footer reports
+`N SHOWN · N LIVE · N HIDDEN`, which separates "the API sent a short page" from
+"the inactive filter removed rows"; hover the status chip to see which endpoint
+was used.
+
+If UEX renames the collection, pin it without touching the code:
+
+```json
+"uex_marketplace_endpoint": "marketplace_ads"
+```
+
+in `%APPDATA%\Citizen Assistant\config.json`. Field renames are still handled by
+the alias tables at the top of that file.
 
 ## INVENTORY
 
