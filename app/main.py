@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 import time
@@ -1147,8 +1148,25 @@ class OverlayApp(QObject):
         self.app.processEvents()
 
 
+def _prefer_xwayland() -> None:
+    """Run as an XWayland client when a Wayland session is in use.
+
+    Wayland gives an application no say in where its own toplevel sits, and this
+    overlay's whole design depends on positioning itself at the top of the
+    screen and being dragged around. XWayland still honours ``move()``, so an
+    X11 window is the only way the panels can behave. Only applied when both
+    backends are available and the user has not chosen one.
+    """
+    if (sys.platform.startswith("linux")
+            and os.environ.get("WAYLAND_DISPLAY")
+            and os.environ.get("DISPLAY")
+            and not os.environ.get("QT_QPA_PLATFORM")):
+        os.environ["QT_QPA_PLATFORM"] = "xcb"
+
+
 # ---------------------------------------------------------------------------
 def main(argv: list[str] | None = None) -> int:
+    _prefer_xwayland()
     _install_crash_log()
     parser = argparse.ArgumentParser(prog="citizen-assistant", description="Star Citizen overlay")
     parser.add_argument("--demo", action="store_true",

@@ -49,11 +49,13 @@ uv pip install --python .venv/bin/python -r requirements.txt
 `run.command` passes any arguments straight to `app`, and defaults to `--demo`
 so no capture region is needed. The Windows launchers are unaffected.
 
-### Linux (X11)
+### Linux (X11 / XWayland)
 
-Runs from source. Qt, OCR, screen capture and the log parsers all work; global
-hotkeys use X11 key grabs, so **start an X11 session** rather than Wayland — a
-Wayland compositor does not let a background application grab keys.
+Runs from source. Global hotkeys use X11 key grabs, which is why the app prefers
+an **X11 session**. On a Wayland session it starts as an **XWayland** client
+automatically: Wayland does not let an application position its own windows, and
+this overlay depends on placing the bar at the top of the screen and dragging
+panels around. Set `QT_QPA_PLATFORM` yourself to override that.
 
 ```bash
 # Arch
@@ -82,12 +84,16 @@ layout). Set `SC_GAME_LOG` to a full path if yours is elsewhere.
 
 | Feature | Linux notes |
 | --- | --- |
-| F3 / F4 | X11: global, like Windows. Wayland: only while an overlay window has focus |
-| Always-on-top | X11 works; Wayland depends on the compositor |
+| Window position, dragging | Works under X11 and XWayland; native Wayland ignores `move()` |
+| F3 / F4 | X11 and XWayland: global. Native Wayland: only while an overlay window has focus |
+| Always-on-top | X11 and XWayland work; native Wayland depends on the compositor |
 | Click-through | No-op outside Windows |
-| Capture | `mss` on X11; Wayland needs a portal, which is too slow for the scanner |
+| Capture | `mss` on X11/XWayland; a native Wayland session needs a portal, too slow for the scanner |
 | Voice | Needs `espeak-ng` or `spd-say` |
 | Config location | `~/.config/Citizen Assistant/` |
+
+For the most predictable behaviour in a game, log into a **Plasma/GNOME X11
+session**. Everything above then behaves like the Windows build.
 
 ## Install
 
