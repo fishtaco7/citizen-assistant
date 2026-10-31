@@ -49,13 +49,20 @@ uv pip install --python .venv/bin/python -r requirements.txt
 `run.command` passes any arguments straight to `app`, and defaults to `--demo`
 so no capture region is needed. The Windows launchers are unaffected.
 
-### Linux (X11 / XWayland)
+### Linux (X11)
 
-Runs from source. Global hotkeys use X11 key grabs, which is why the app prefers
-an **X11 session**. On a Wayland session it starts as an **XWayland** client
-automatically: Wayland does not let an application position its own windows, and
-this overlay depends on placing the bar at the top of the screen and dragging
-panels around. Set `QT_QPA_PLATFORM` yourself to override that.
+Runs from source. **The mining scanner needs a real X11 session.** On Wayland the
+app still runs and every other tab works, but screen capture is impossible: the
+X server's root window does not contain the composited desktop, so `mss` returns
+black — verified with `Xephyr` on a Wayland-only Plasma install.
+
+Two things follow from that:
+
+- Global hotkeys use X11 key grabs, so an X11 session is wanted for those too.
+- On a Wayland session the app starts as an **XWayland** client automatically
+  (unless `QT_QPA_PLATFORM` is set), because Wayland does not let an application
+  position its own windows — that is what fixes a nav bar stuck mid-screen and
+  panels that refuse to drag. Positioning works; capture does not.
 
 ```bash
 # Arch
@@ -68,6 +75,10 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 bash run.sh
 ```
+
+If your distro no longer ships an X11 session (recent Plasma is Wayland-only),
+install a lightweight X11 desktop such as XFCE (`sudo pacman -S xorg-server
+xfce4`) and pick it at login.
 
 `run.sh` forwards its arguments to the app:
 
@@ -84,16 +95,16 @@ layout). Set `SC_GAME_LOG` to a full path if yours is elsewhere.
 
 | Feature | Linux notes |
 | --- | --- |
-| Window position, dragging | Works under X11 and XWayland; native Wayland ignores `move()` |
-| F3 / F4 | X11 and XWayland: global. Native Wayland: only while an overlay window has focus |
+| Mining scanner | **X11 only**; Wayland capture is black |
+| Window position, dragging | X11 works; Wayland works through XWayland; native Wayland ignores `move()` |
+| F3 / F4 | X11: global. Wayland: application shortcuts, only while an overlay window has focus |
 | Always-on-top | X11 and XWayland work; native Wayland depends on the compositor |
 | Click-through | No-op outside Windows |
-| Capture | `mss` on X11/XWayland; a native Wayland session needs a portal, too slow for the scanner |
 | Voice | Uses speech-dispatcher when present, else `espeak-ng`/`spd-say` |
 | Config location | `~/.config/Citizen Assistant/` |
 
-For the most predictable behaviour in a game, log into a **Plasma/GNOME X11
-session**. Everything above then behaves like the Windows build.
+Verified on Arch: UI, positioning, OCR and the scanner inside a nested X server
+(`Xephyr`). Hotkeys and in-game capture still need a real X11 desktop.
 
 ## Install
 
