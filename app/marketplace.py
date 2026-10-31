@@ -30,8 +30,15 @@ USER_AGENT = (f"Citizen-Assistant/{VERSION} "
 # Tried in order; the first collection that answers with rows wins.
 ENDPOINTS = ("marketplace", "marketplace_ads", "marketplace_listings")
 
-TTL = 300.0
+TTL = 600.0
 CACHE_NAME = "marketplace_cache.json"
+
+# The collection is served one page at a time: a plain request returns 500 rows
+# and no paging parameter, which is why a search for a common item showed only a
+# handful of ads. Page until a page brings nothing new; if the parameter is
+# ignored, that second page is all duplicates and paging stops by itself.
+PAGE_MAX = 20
+_ID_KEYS = ("id", "id_ad", "id_marketplace", "id_listing", "id_advert")
 
 _NAME = ("item_name", "name", "title", "item", "commodity_name", "vehicle_name")
 _PRICE = ("price", "price_auec", "unit_price", "amount")
@@ -168,6 +175,21 @@ def _rows(payload) -> list[dict]:
     return []
 
 
+def _row_key(record: dict) -> tuple:
+    """Stable identity for de-duplicating pages of the same board."""
+    lowered = _lower(record)
+    for key in _ID_KEYS:
+        value = lowered.get(key)
+        if value not in (None, "", []):
+            return ("id", str(value))
+    return ("row",
+            str(_pick(record, _NAME, "")),
+            str(_pick(record, _PRICE, "")),
+            str(_pick(record, _QTY, "")),
+            str(_pick(record, _CREATED, "")),
+            str(_pick(record, _SELLER, "")))
+
+
 def _get(url: str, timeout: float = 20.0):
     request = urllib.request.Request(url, headers={
         "User-Agent": USER_AGENT,
@@ -243,17 +265,17 @@ class MarketplaceData:
             self.loaded_at = 0.0
 
     def fetch(self) -> None:
-        """Read the board, keeping whichever collection name returns most.
+        """Read the whole board, paging until no new ads arrive.
 
-        The names below have all been used for marketplace data at some point.
-        Picking the largest response rather than the first one that answers
-        means a smaller, partial collection can never shadow the full board.
+        The collection has used more than one name, so page one of each is
+        tried and the biggest kept. A plain request stops at 500 rows, so the
+        rest is paged in and de-duplicated; if the paging parameter is ignored,
+        the second probe page is all duplicates and paging stops by itself.
         """
         self.error = ""
         last: Exception | None = None
         best_name = ""
-        best_live: list[dict] = []
-        best_rows = 0
+        first_page: list[dict] = []
 
         order = list(ENDPOINTS)
         if self._endpoint:
@@ -262,33 +284,31 @@ class MarketplaceData:
 
         for name in order:
             try:
-                payload = _get(f"{API}/{name}")
+                rows = _rows(_get(f"{API}/{name}"))
             except Exception as exc:        # 404, offline, rate limited
                 last = exc
                 continue
-
-            rows = _rows(payload)
             if not rows:
                 continue
-
-            live = [row for row in rows if _is_active(row)]
-            if self._endpoint and name == self._endpoint and live:
+            if self._endpoint and name == self._endpoint:
                 # An explicit endpoint wins outright; the rest are only a
                 # fallback for when that one disappears.
-                best_name, best_live, best_rows = name, live, len(rows)
+                best_name, first_page = name, rows
                 break
-            if len(live) > len(best_live):
-                best_name, best_live, best_rows = name, live, len(rows)
+            if len(rows) > len(first_page):
+                best_name, first_page = name, rows
 
-        if best_live:
-            ads = [ad for ad in (parse_ad(row) for row in best_live) if ad]
+        if best_name:
+            rows = self._collect(best_name, first_page)
+            live = [row for row in rows if _is_active(row)]
+            ads = [ad for ad in (parse_ad(row) for row in live) if ad]
             if ads:
                 self.ads = _sort(ads)
                 self.source = f"{API}/{best_name}"
                 self.loaded_at = time.time()
-                self.fetched = len(best_live)
-                self.dropped = max(0, best_rows - len(best_live))
-                _write_cache(best_live)
+                self.fetched = len(live)
+                self.dropped = max(0, len(rows) - len(live))
+                _write_cache(live)
                 return
 
         self.load_cached()
@@ -296,6 +316,46 @@ class MarketplaceData:
             raise RuntimeError(
                 "UEX marketplace unavailable"
                 + (f": {last}" if last else " (no ads in the response)"))
+
+    # ------------------------------------------------------------------
+    def _page(self, name: str, page: int, size: int, parameter: str) -> list[dict]:
+        query = (f"offset={(page - 1) * size}" if parameter == "offset"
+                 else f"page={page}")
+        try:
+            return _rows(_get(f"{API}/{name}?{query}"))
+        except Exception:
+            return []
+
+    def _collect(self, name: str, first_page: list[dict]) -> list[dict]:
+        """Page the collection until a page contributes nothing new."""
+        rows = list(first_page)
+        seen = {_row_key(row) for row in rows}
+        if not rows:
+            return rows
+
+        size = len(first_page)
+        parameter = ""
+        # The paging parameter is not documented anywhere we can rely on, so
+        # probe both common spellings and keep whichever returns new rows.
+        for candidate in ("page", "offset"):
+            fresh = [row for row in self._page(name, 2, size, candidate)
+                     if _row_key(row) not in seen]
+            if fresh:
+                parameter = candidate
+                rows.extend(fresh)
+                seen.update(_row_key(row) for row in fresh)
+                break
+        if not parameter:
+            return rows               # single-page collection, or hard-capped
+
+        for page in range(3, PAGE_MAX + 1):
+            fresh = [row for row in self._page(name, page, size, parameter)
+                     if _row_key(row) not in seen]
+            if not fresh:
+                break
+            rows.extend(fresh)
+            seen.update(_row_key(row) for row in fresh)
+        return rows
 
     # ------------------------------------------------------------------
     def search(self, query: str, side: str) -> list[Ad]:

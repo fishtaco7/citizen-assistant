@@ -764,9 +764,12 @@ for items other players are selling.
   Expired, sold and inactive ads are dropped when the board is read — the site
   keeps a lot of them visible.
 - Double-click a row to open the marketplace in your browser.
-- `↻` re-syncs. The board is cached for five minutes in
+- `↻` re-syncs. The board is cached for ten minutes in
   `%APPDATA%\Citizen Assistant\marketplace_cache.json`, so reopening the tab is
   instant and an offline start still shows the previous board.
+- UEX serves the board 500 ads at a time, so a refresh pages through the whole
+  collection and de-duplicates it. The footer's `N LIVE` is the real size of
+  what was fetched.
 
 The public API has used more than one collection name for this data, so
 `app/marketplace.py` asks `marketplace`, `marketplace_ads` and
