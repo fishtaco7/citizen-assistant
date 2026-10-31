@@ -1,31 +1,34 @@
-"""Global hotkeys via RegisterHotKey, with a key-state fallback on Windows.
+"""Global hotkeys.
 
-RegisterHotKey works everywhere except inside many games' exclusive fullscreen
-mode: the system stops delivering ``WM_HOTKEY`` to a non-foreground thread, so
-F3/F4 look dead until the user Alt-Tabs out.  Polling ``GetAsyncKeyState`` reads
-the keyboard's global state instead, which keeps working while another window
-owns the display, so both paths stay active and are de-duplicated: whichever
-notices the press first wins, and the other is ignored for a moment.
+Windows uses ``RegisterHotKey`` plus a ``GetAsyncKeyState`` poll, because
+exclusive fullscreen stops ``WM_HOTKEY`` reaching a background thread.
 
-Polling is edge-triggered (press, not hold), so a held key toggles once, the
-same behaviour MOD_NOREPEAT gave the registered path.
+Linux (X11) uses ``XGrabKey`` on the root window, which is the only way a
+background app can see a key pressed in another window. Wayland has no such
+mechanism for ordinary clients, so there the app falls back to application
+shortcuts (F3/F4 work while one of the overlay windows has focus) — see
+``needs_shortcuts``.
 
-RegisterHotKey needs a thread with a message pump, so the bindings run on a
-dedicated QThread.  Emitting a Qt signal from there is safe - Qt queues the
-delivery onto the GUI thread automatically.
+macOS has no permission-free equivalent either (CGEventTap needs Accessibility
+approval); it takes the same application-shortcut path.
 
-macOS has no permission-free equivalent (CGEventTap needs Accessibility
-approval), so on macOS this class is a no-op and ``main`` installs application
-shortcuts for F3/F4 instead. The tray menu always works.
+Emitting a Qt signal from the worker thread is safe - Qt queues the delivery
+onto the GUI thread automatically.
 """
 from __future__ import annotations
 
+import os
 import sys
 import time
 
 from PySide6.QtCore import QThread, Signal
 
 WINDOWS = sys.platform == "win32"
+LINUX = sys.platform.startswith("linux")
+DISPLAY = LINUX and bool(os.environ.get("DISPLAY"))
+# Wayland sessions usually still export DISPLAY for XWayland. X grabs only see
+# input routed through the X server, so the shortcut fallback stays installed.
+WAYLAND = LINUX and bool(os.environ.get("WAYLAND_DISPLAY"))
 
 if WINDOWS:
     import ctypes
@@ -47,10 +50,58 @@ if WINDOWS:
     user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
     user32.GetAsyncKeyState.restype = wintypes.SHORT
 
-# How often the key state is polled, and how long a press is ignored on the
-# other path so one physical key press cannot toggle twice.
+# How often the Windows key state is polled, and how long a press is ignored on
+# the other path so one physical key press cannot toggle twice.
 SCAN_MS = 25
 DEBOUNCE_S = 0.15
+
+# X11 constants
+KeyPress = 2
+KeyRelease = 3
+XK_F1 = 0xFFBE
+LockMask = 2
+Mod2Mask = 16
+GrabModeAsync = 1
+
+
+if not WINDOWS:
+    import ctypes
+
+    class _XKeyEvent(ctypes.Structure):
+        """XKeyEvent layout; only ``type`` and ``keycode`` are read."""
+
+        _fields_ = [
+            ("type", ctypes.c_int),
+            ("serial", ctypes.c_ulong),
+            ("send_event", ctypes.c_int),
+            ("display", ctypes.c_void_p),
+            ("window", ctypes.c_ulong),
+            ("root", ctypes.c_ulong),
+            ("subwindow", ctypes.c_ulong),
+            ("time", ctypes.c_ulong),
+            ("x", ctypes.c_int),
+            ("y", ctypes.c_int),
+            ("x_root", ctypes.c_int),
+            ("y_root", ctypes.c_int),
+            ("state", ctypes.c_uint),
+            ("keycode", ctypes.c_uint),
+            ("same_screen", ctypes.c_int),
+        ]
+
+    class _XEvent(ctypes.Union):
+        _fields_ = [
+            ("type", ctypes.c_int),
+            ("xkey", _XKeyEvent),
+            ("pad", ctypes.c_long * 24),
+        ]
+
+
+def _x11_keysym(vk: int) -> int:
+    """Map a Windows virtual-key code from config to an X11 keysym."""
+    vk = int(vk)
+    if 0x70 <= vk <= 0x87:            # VK_F1..VK_F24
+        return XK_F1 + (vk - 0x70)
+    return vk
 
 
 class HotkeyThread(QThread):
@@ -65,6 +116,7 @@ class HotkeyThread(QThread):
         self._stopping = False
         self._recent: dict[int, float] = {}
         self._down: dict[int, bool] = {}
+        self._error_handler = None
 
     @property
     def failed(self) -> list[int]:
@@ -72,7 +124,12 @@ class HotkeyThread(QThread):
 
     @property
     def supported(self) -> bool:
-        return WINDOWS
+        return WINDOWS or DISPLAY
+
+    @property
+    def needs_shortcuts(self) -> bool:
+        """Install application shortcuts as well (non-Windows, and Wayland)."""
+        return not WINDOWS
 
     def _fire(self, hk_id: int) -> None:
         """Emit once per press, whichever path saw it first."""
@@ -83,9 +140,13 @@ class HotkeyThread(QThread):
         self.pressed.emit(int(hk_id))
 
     def run(self) -> None:  # noqa: D102
-        if not WINDOWS:
-            return
+        if WINDOWS:
+            self._run_windows()
+        elif DISPLAY:
+            self._run_x11()
 
+    # ------------------------------------------------------------------
+    def _run_windows(self) -> None:
         registered: list[int] = []
         for hk_id, vk in self._bindings.items():
             if user32.RegisterHotKey(None, hk_id, MOD_NOREPEAT, vk):
@@ -116,6 +177,76 @@ class HotkeyThread(QThread):
 
         for hk_id in registered:
             user32.UnregisterHotKey(None, hk_id)
+
+    # ------------------------------------------------------------------
+    def _run_x11(self) -> None:
+        try:
+            xlib = ctypes.CDLL("libX11.so.6")
+        except OSError:
+            return
+
+        xlib.XOpenDisplay.argtypes = [ctypes.c_char_p]
+        xlib.XOpenDisplay.restype = ctypes.c_void_p
+        xlib.XDefaultRootWindow.argtypes = [ctypes.c_void_p]
+        xlib.XDefaultRootWindow.restype = ctypes.c_ulong
+        xlib.XKeysymToKeycode.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+        xlib.XKeysymToKeycode.restype = ctypes.c_ubyte
+        xlib.XGrabKey.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_uint,
+                                  ctypes.c_ulong, ctypes.c_int, ctypes.c_int,
+                                  ctypes.c_int]
+        xlib.XGrabKey.restype = ctypes.c_int
+        xlib.XPending.argtypes = [ctypes.c_void_p]
+        xlib.XPending.restype = ctypes.c_int
+        xlib.XNextEvent.argtypes = [ctypes.c_void_p, ctypes.POINTER(_XEvent)]
+        xlib.XNextEvent.restype = ctypes.c_int
+        xlib.XCloseDisplay.argtypes = [ctypes.c_void_p]
+
+        # Another client holding the key raises BadAccess; without this the
+        # default Xlib handler prints and exits the whole application.
+        handler_type = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p,
+                                        ctypes.c_void_p)
+        xlib.XSetErrorHandler.argtypes = [handler_type]
+        xlib.XSetErrorHandler.restype = ctypes.c_void_p
+
+        def _ignore(_display, _event):
+            return 0
+
+        self._error_handler = handler_type(_ignore)
+        xlib.XSetErrorHandler(self._error_handler)
+
+        display = xlib.XOpenDisplay(None)
+        if not display:
+            return
+        root = xlib.XDefaultRootWindow(display)
+
+        bound: dict[int, int] = {}
+        for hk_id, vk in self._bindings.items():
+            keycode = int(xlib.XKeysymToKeycode(display, _x11_keysym(vk)))
+            if not keycode:
+                self._failed.append(hk_id)
+                continue
+            bound[keycode] = hk_id
+            # A grab must enumerate the lock modifiers, otherwise the shortcut
+            # stops working the moment Caps Lock or Num Lock is on.
+            for extra in (0, LockMask, Mod2Mask, LockMask | Mod2Mask):
+                xlib.XGrabKey(display, keycode, extra, root, 1,
+                              GrabModeAsync, GrabModeAsync)
+
+        event = _XEvent()
+        held: set[int] = set()
+        while not self._stopping:
+            while xlib.XPending(display):
+                xlib.XNextEvent(display, ctypes.byref(event))
+                if event.type == KeyPress:
+                    code = int(event.xkey.keycode)
+                    if code in bound and code not in held:
+                        held.add(code)
+                        self._fire(bound[code])
+                elif event.type == KeyRelease:
+                    held.discard(int(event.xkey.keycode))
+            time.sleep(0.02)
+
+        xlib.XCloseDisplay(display)
 
     def stop(self) -> None:
         self._stopping = True

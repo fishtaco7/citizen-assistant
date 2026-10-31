@@ -514,9 +514,9 @@ class OverlayApp(QObject):
         # macOS has no permission-free global hotkey API. Register application
         # shortcuts so F3/F4 still work whenever one of our windows has focus;
         # the tray menu is the always-available fallback.
-        if not self.hotkeys.supported:
+        if self.hotkeys.needs_shortcuts:
             self._shortcuts = []
-            for target in (self.hauling, self.inventory):
+            for target in (self.hauling, self.inventory, self.uex, self.notes):
                 for key, slot in (("F3", self.nav.toggle), ("F4", self._hide_all)):
                     sc = QShortcut(QKeySequence(key), target)
                     sc.setContext(Qt.ShortcutContext.ApplicationShortcut)

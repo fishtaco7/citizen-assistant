@@ -179,6 +179,23 @@ def _candidate_logs() -> Iterable[Path]:
             for branch in ("LIVE", "PTU", "EPTU"):
                 yield root / "StarCitizen" / branch / "Game.log"
 
+    # Proton keeps the game inside a per-app prefix.
+    if sys.platform.startswith("linux"):
+        home = Path.home()
+        for steam in (
+            home / ".steam" / "steam",
+            home / ".local" / "share" / "Steam",
+            home / ".var" / "app" / "com.valvesoftware.Steam"
+                 / ".local" / "share" / "Steam",
+        ):
+            try:
+                for path in steam.glob(
+                        "steamapps/compatdata/*/pfx/drive_c/Program Files/"
+                        "Roberts Space Industries/StarCitizen/*/Game.log"):
+                    yield path
+            except OSError:
+                continue
+
     # CrossOver / Whisky installations on macOS.
     if sys.platform == "darwin":
         base = Path.home() / "Library" / "Application Support"

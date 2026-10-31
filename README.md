@@ -49,6 +49,46 @@ uv pip install --python .venv/bin/python -r requirements.txt
 `run.command` passes any arguments straight to `app`, and defaults to `--demo`
 so no capture region is needed. The Windows launchers are unaffected.
 
+### Linux (X11)
+
+Runs from source. Qt, OCR, screen capture and the log parsers all work; global
+hotkeys use X11 key grabs, so **start an X11 session** rather than Wayland — a
+Wayland compositor does not let a background application grab keys.
+
+```bash
+# Arch
+sudo pacman -S python python-pip espeak-ng
+
+# Debian / Ubuntu
+sudo apt install python3 python3-pip python3-venv espeak-ng
+
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+bash run.sh
+```
+
+`run.sh` forwards its arguments to the app:
+
+```bash
+bash run.sh --demo                 # synthetic signature, no game needed
+bash run.sh --open hauling         # start with a tool open
+```
+
+`chmod +x run.sh` lets you call `./run.sh` directly.
+
+Star Citizen runs through Proton, and the `Game.log` is found automatically
+under `steamapps/compatdata/*/pfx/drive_c/…` (native Steam and the Flatpak
+layout). Set `SC_GAME_LOG` to a full path if yours is elsewhere.
+
+| Feature | Linux notes |
+| --- | --- |
+| F3 / F4 | X11: global, like Windows. Wayland: only while an overlay window has focus |
+| Always-on-top | X11 works; Wayland depends on the compositor |
+| Click-through | No-op outside Windows |
+| Capture | `mss` on X11; Wayland needs a portal, which is too slow for the scanner |
+| Voice | Needs `espeak-ng` or `spd-say` |
+| Config location | `~/.config/Citizen Assistant/` |
+
 ## Install
 
 ### One-click install (Windows)
