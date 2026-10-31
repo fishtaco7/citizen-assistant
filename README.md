@@ -89,7 +89,7 @@ layout). Set `SC_GAME_LOG` to a full path if yours is elsewhere.
 | Always-on-top | X11 and XWayland work; native Wayland depends on the compositor |
 | Click-through | No-op outside Windows |
 | Capture | `mss` on X11/XWayland; a native Wayland session needs a portal, too slow for the scanner |
-| Voice | Needs `espeak-ng` or `spd-say` |
+| Voice | Uses speech-dispatcher when present, else `espeak-ng`/`spd-say` |
 | Config location | `~/.config/Citizen Assistant/` |
 
 For the most predictable behaviour in a game, log into a **Plasma/GNOME X11

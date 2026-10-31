@@ -2,7 +2,11 @@
 
 Uses QtTextToSpeech so the same code speaks through SAPI on Windows and
 AVSpeechSynthesizer on macOS, with no extra dependency (Qt Speech ships in
-PySide6-Addons). If no engine is available the class degrades to a no-op.
+PySide6-Addons).
+
+That plugin needs speech-dispatcher on Linux, which is often absent, so the
+Linux path falls back to the same command-line speakers the refinery alerts use
+(``espeak-ng`` or ``spd-say``). If neither exists the class degrades to a no-op.
 
 Announcements are made by the controller only when a *new* signature locks, so
 a rock that stays on screen is spoken once, not four times a second.
@@ -10,29 +14,52 @@ a rock that stays on screen is spoken once, not four times a second.
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
+import sys
 
 try:
     from PySide6.QtTextToSpeech import QTextToSpeech
 except Exception:          # Qt built without the Speech module
     QTextToSpeech = None    # type: ignore[assignment]
 
+LINUX = sys.platform.startswith("linux")
+
+
+def _linux_speaker() -> list[str] | None:
+    """Command-line TTS prefix, or None when nothing is installed."""
+    for name in ("espeak-ng", "espeak", "spd-say"):
+        found = shutil.which(name)
+        if found:
+            return [found]
+    return None
+
 
 class Voice:
     def __init__(self) -> None:
         self._engine = None
+        self._cli: list[str] | None = None
+        self._cli_process: subprocess.Popen | None = None
         self._enabled = True
         self._volume = 0.8
-        if QTextToSpeech is None:
-            return
-        try:
-            self._engine = QTextToSpeech()
-            self._engine.setVolume(self._volume)
-        except Exception:
+
+        if QTextToSpeech is not None:
+            try:
+                self._engine = QTextToSpeech()
+                self._engine.setVolume(self._volume)
+            except Exception:
+                self._engine = None
+
+        if LINUX and not self.available:
+            # The Qt plugin is missing or failed: use a CLI speaker instead.
             self._engine = None
+            self._cli = _linux_speaker()
 
     # ------------------------------------------------------------------
     @property
     def available(self) -> bool:
+        if self._cli is not None:
+            return True
         if self._engine is None:
             return False
         return self._engine.state() != QTextToSpeech.State.Error
@@ -67,6 +94,10 @@ class Voice:
         cleaned = re.sub(r"[^\w\s,.'\-]", " ", str(text)).strip()
         if not cleaned:
             return False
+
+        if self._cli is not None:
+            return self._say_cli(cleaned)
+
         try:
             self._engine.stop()
             self._engine.say(cleaned)
@@ -74,7 +105,27 @@ class Voice:
         except Exception:
             return False
 
+    def _say_cli(self, text: str) -> bool:
+        argv = list(self._cli)
+        if argv[0].endswith(("espeak-ng", "espeak")):
+            argv += ["-a", str(int(self._volume * 200)), "-s", "165"]
+        self.stop()
+        try:
+            self._cli_process = subprocess.Popen(
+                argv + [text],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL)
+            return True
+        except OSError:
+            return False
+
     def stop(self) -> None:
+        if self._cli_process is not None:
+            try:
+                self._cli_process.terminate()
+            except OSError:
+                pass
+            self._cli_process = None
         if self._engine is not None:
             try:
                 self._engine.stop()
