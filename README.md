@@ -752,41 +752,24 @@ modify the game in any way.
 
 ## UEX
 
-`UEX` searches the player marketplace at <https://uexcorp.space/marketplace/>
-for items other players are selling.
+`UEX` is a search box for the player marketplace at
+<https://uexcorp.space/marketplace/>.
 
-- Type in the search box to filter by item name (or seller). Matching is
-  case-insensitive and instant: the board is fetched once and filtered locally,
-  so typing does not hit the network.
-- **SELL / BUY** chips switch between ads offering an item and ads looking for
-  one; the header counts both.
-- Rows show item, price in aUEC, quantity, seller and age, newest first.
-  Expired, sold and inactive ads are dropped when the board is read — the site
-  keeps a lot of them visible.
-- Double-click a row to open the marketplace in your browser.
-- `↻` re-syncs. The board is cached for ten minutes in
-  `%APPDATA%\Citizen Assistant\marketplace_cache.json`, so reopening the tab is
-  instant and an offline start still shows the previous board.
-- UEX serves the board 500 ads at a time, so a refresh pages through the whole
-  collection and de-duplicates it. The footer's `N LIVE` is the real size of
-  what was fetched.
+- Type an item or commodity (`p6`, `quantanium`) and press **Enter** or
+  **OPEN**. The marketplace opens in your browser with that search applied — the
+  full board, weapons and commodities, with quality and every listing the site
+  shows.
+- With the box empty, **OPEN** takes you to the marketplace home page.
+- The footer shows the exact URL that was opened.
 
-The public API has used more than one collection name for this data, so
-`app/marketplace.py` asks `marketplace`, `marketplace_ads` and
-`marketplace_listings` and keeps **whichever returns the most rows**, so a small
-response cannot shadow the full board. The footer reports
-`N SHOWN · N LIVE · N HIDDEN`, which separates "the API sent a short page" from
-"the inactive filter removed rows"; hover the status chip to see which endpoint
-was used.
+Why a launcher rather than a list: the marketplace board is rendered
+server-side behind Cloudflare and has no public JSON feed. The public API only
+serves a capped page of commodity ads (500 rows), which is why an in-app list
+found one hephaestanite ad where the website had dozens. Linking to the real
+page is smaller, always current, and cannot break when UEX changes their
+backend.
 
-If UEX renames the collection, pin it without touching the code:
-
-```json
-"uex_marketplace_endpoint": "marketplace_ads"
-```
-
-in `%APPDATA%\Citizen Assistant\config.json`. Field renames are still handled by
-the alias tables at the top of that file.
+Trade routes, prices and stock still come from the API — see *HAULING* above.
 
 ## INVENTORY
 
@@ -945,7 +928,7 @@ one — only the repository owner can push to it.
 | Start menu opens an old version | Run `install.bat` from the new folder — it repoints the shortcuts and deletes stale ones. Then compare the build stamp in `⚙`. |
 | `⚙` shows no build stamp or no screenshots button | You are running a copy from before those features. Quit it from the tray, then start `run.bat` inside the folder you downloaded. |
 | COMBAT does nothing and no panel appears | Usually an older build without the on-screen clamp. Check the build stamp before changing anything else. |
-| UEX shows no ads | Press `↻`. If the status stays `OFFLINE`, the public API is not serving the marketplace at that path — check the endpoint names at the top of `app/marketplace.py` against the current UEX API docs. |
+| UEX opens the wrong page | The box should contain only the search term, then press **OPEN**. The footer shows the exact URL that was opened. |
 | Scanner shows `UNKNOWN` | The number is not in the table, or OCR dropped a digit. Check the raw value shown. |
 | Nothing appears in screenshots | Open `⚙` and set the screenshots button to **VISIBLE**. If it already says VISIBLE, your build predates the toggle: run with `--capture-visible`. |
 | Scanner stops reading after making screenshots visible | A panel now overlaps the calibrated scan box, so the scanner captures the overlay instead of the HUD. Move that panel away from the box, or set the screenshots button back to **HIDDEN** while mining. |

@@ -306,7 +306,7 @@ class OverlayApp(QObject):
         self.orefinder = OreFinderPanel(self.ore_data)
         self.hauling = HaulingPanel()
         self.inventory = InventoryPanel()
-        self.uex = UexPanel(endpoint=self.cfg.get("uex_marketplace_endpoint") or None)
+        self.uex = UexPanel()
         self.notes = NotesPanel()
 
         # Headless combat feed: the tracker stays Qt-free; this panel only
