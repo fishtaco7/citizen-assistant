@@ -1,0 +1,16 @@
+## Interface: 11507, 11508, 11509, 20504, 20505, 20506
+## Title: Portals
+## Notes: Portal and teleport bar for mages. Left-click a portal, right-click the teleport. Also detects portal requests in chat and answers them. Works on Classic Era and TBC Classic.
+## Author: Jordan
+## Version: 1.4.0
+## SavedVariables: PortalsDB, MageUtilityDB
+## IconTexture: Interface\Icons\Spell_Arcane_PortalStormwind
+## Category: Action Bars
+## X-Category: Action Bars
+
+Core.lua
+PortalBar.lua
+Sales.lua
+Queue.lua
+Minimap.lua
+Options.lua
