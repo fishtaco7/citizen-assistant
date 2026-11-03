@@ -18,6 +18,7 @@ from PySide6.QtGui import (QAction, QColor, QFont, QGuiApplication, QIcon,
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from . import win32
+from .blueprint_sets import BlueprintSets
 from .blueprints import BlueprintTracker
 from .capture import is_region_valid
 from .combat import CombatTracker
@@ -26,6 +27,7 @@ from .game_log import GameLogMonitor
 from .hotkeys import HotkeyThread
 from .mining import MiningData
 from .orefinder import LiveData
+from .ui.blueprint_toast import BlueprintToast
 from .ui.combat_panel import CombatPanel
 from .ui.hauling_panel import HaulingPanel
 from .ui.inventory_panel import InventoryPanel
@@ -378,6 +380,11 @@ class OverlayApp(QObject):
         # the registry worker owns JSON reads and writes.
         self.blueprint_tracker = BlueprintTracker()
         self.blueprint_tracker.subscribe(self._on_inventory_event)
+        # Mission/set grouping is optional community data; without it the popup
+        # still reports totals.
+        self.blueprint_sets = BlueprintSets()
+        self.blueprint_toast = BlueprintToast()
+        self._session_blueprints = 0
 
         self.scan = ScanThread(self.data, cfg, demo=demo)
         self.scan.result.connect(self._on_result)
@@ -424,6 +431,7 @@ class OverlayApp(QObject):
         self.combat_panel.close_requested.connect(self._on_combat_close)
         self.uex.close_requested.connect(self._on_uex_close)
         self.notes.close_requested.connect(self._on_notes_close)
+        self.blueprint_unlocked_signal.connect(self._on_blueprint_unlocked)
         self.combat_event.connect(
             self.combat_panel.add_event,
             Qt.ConnectionType.QueuedConnection)
@@ -598,7 +606,7 @@ class OverlayApp(QObject):
 
     def _apply_window_tweaks(self) -> None:
         for widget in (self.nav, self.panel, self.settings, self.orefinder,
-                       self.combat_panel):
+                       self.blueprint_toast, self.combat_panel):
             try:
                 win32.make_overlay_window(widget)
             except Exception:
@@ -622,7 +630,7 @@ class OverlayApp(QObject):
         show = self._capture_visible()
         for widget in (self.nav, self.panel, self.settings, self.orefinder,
                        self.hauling, self.inventory, self.uex, self.notes,
-                       self.combat_panel):
+                       self.blueprint_toast, self.combat_panel):
             try:
                 if show:
                     win32.allow_capture(widget)
@@ -643,7 +651,7 @@ class OverlayApp(QObject):
     def _assert_topmost(self) -> None:
         for widget in (self.nav, self.panel, self.orefinder, self.hauling,
                        self.settings, self.inventory, self.uex, self.notes,
-                       self.combat_panel):
+                       self.blueprint_toast, self.combat_panel):
             if not widget.isVisible():
                 continue
             try:
@@ -672,6 +680,7 @@ class OverlayApp(QObject):
         self.inventory.hide()
         self.uex.hide()
         self.notes.hide()
+        self.blueprint_toast.hide()
         self.combat_panel.hide()
         self.nav.set_active(None)
 
@@ -748,6 +757,32 @@ class OverlayApp(QObject):
             self.blueprint_unlocked_signal.emit(
                 event.to_blueprint_dict())
         self.inventory_event_signal.emit(event.to_dict())
+
+    def _on_blueprint_unlocked(self, payload) -> None:
+        """Show the popup for a first-time unlock, with set progress if known."""
+        if not isinstance(payload, dict) or not payload.get("is_new_unlock"):
+            return
+        name = str(payload.get("item_name") or "").strip()
+        if not name:
+            return
+
+        self._session_blueprints += 1
+        if not self.blueprint_sets.loaded:
+            # Pick up a mapping dropped in after launch.
+            self.blueprint_sets.load()
+        unlocked = [record.item_name
+                    for record in self.blueprint_tracker.blueprints]
+
+        set_name = self.blueprint_sets.set_for(name)
+        if set_name:
+            have, total = self.blueprint_sets.progress(set_name, unlocked)
+            line = (f"{have} of {total} from {set_name}" if total
+                    else f"{len(unlocked)} unlocked in total")
+        else:
+            line = (f"{len(unlocked)} unlocked in total"
+                    f"  ·  {self._session_blueprints} this session")
+
+        self.blueprint_toast.show_blueprint(name, line)
 
     def _toggle_panel(self, tool_id: str) -> None:
         if tool_id != "mining":

@@ -567,6 +567,39 @@ blueprint names, layout/class codes, item names, quantities and loot containers,
 and the registry worker persists permanent history to
 `unlocked_blueprints.json`. No widget or window is created.
 
+### Unlock popup
+
+The overlay subscribes to that feed: when a blueprint unlocks for the **first
+time**, a card appears in the bottom-right corner for 60 seconds (click it to
+dismiss) naming it and showing progress. Duplicates are ignored. The popup
+follows **F4** (hide all) and the screenshots toggle.
+
+```text
+NEW BLUEPRINT
+Defiance Helmet Tactical
+3 of 8 from Covalex Supply Run
+```
+
+Progress needs a mission/set mapping, because the log line never names the
+mission. Add one to `%APPDATA%\Citizen Assistant\blueprint_sets.json`; the
+bundled `app/data/blueprint_sets.json` is only a template:
+
+```json
+{
+  "sets": {
+    "Covalex Supply Run": ["Defiance Helmet Tactical", "Pembroke RSI"]
+  },
+  "blueprints": {
+    "Some Other Blueprint": "Vaughn's Salvage"
+  }
+}
+```
+
+`sets` lists a whole pool; `blueprints` assigns one name at a time. Names match
+case-insensitively with whitespace ignored. Without a mapping the card falls
+back to `47 unlocked in total · 3 this session`, so the feature works before any
+data exists.
+
 The canonical blueprint notification is the authoritative line Star Citizen
 writes for an unlock:
 

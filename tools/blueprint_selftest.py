@@ -441,9 +441,36 @@ def check_tracker(tmp: Path) -> None:
     assert watcher2.stopped
 
 
+def check_sets() -> None:
+    """Mission/set mapping used by the unlock popup."""
+    from app.blueprint_sets import BlueprintSets
+
+    with tempfile.TemporaryDirectory() as raw:
+        path = Path(raw) / "sets.json"
+        path.write_text(json.dumps({
+            "sets": {"Mission A": ["Alpha", "Beta", "Gamma"]},
+            "blueprints": {"Delta": "Mission B"},
+        }), encoding="utf-8")
+
+        sets = BlueprintSets(path)
+        assert sets.loaded
+        assert sets.set_for(" alpha ") == "Mission A"
+        assert sets.set_for("DELTA") == "Mission B"
+        assert sets.set_for("unknown") is None
+        assert sets.progress("Mission A", ["Alpha", "GAMMA"]) == (2, 3)
+        # A set known only from a single assignment has no known size.
+        assert sets.progress("Mission B", ["Delta"]) == (0, 0)
+
+        broken = Path(raw) / "broken.json"
+        broken.write_text("{not json", encoding="utf-8")
+        failed = BlueprintSets(broken)
+        assert not failed.loaded and failed.error
+
+
 def main() -> int:
     check_timestamp()
     check_parser()
+    check_sets()
     with tempfile.TemporaryDirectory() as raw:
         root = Path(raw)
         for name, check in (

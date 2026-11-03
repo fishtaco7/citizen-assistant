@@ -1,0 +1,5 @@
+{
+  "note": "Optional mission/set grouping for blueprints. Copy this file to %APPDATA%\\Citizen Assistant\\blueprint_sets.json and fill it in; the user copy wins over this one. 'sets' maps a mission or pool name to its blueprint names. 'blueprints' assigns one blueprint at a time. Names are matched case-insensitively.",
+  "sets": {},
+  "blueprints": {}
+}
