@@ -307,7 +307,7 @@ game, run it borderless / windowed fullscreen rather than exclusive.
 | `HAULING` on the nav bar | Show / hide trade routes and hauling contracts |
 | `INVENTORY` on the nav bar | Show / hide manual stash notes |
 | `COMBAT` on the nav bar | Show / hide the live Game.log combat feed |
-| `BLUEPRINTS` on the nav bar | Search blueprints, ownership and where they drop |
+| `BLUEPRINTS` on the nav bar | Blueprint lookup (coming soon) |
 | `NOTES` on the nav bar | Show / hide the notepad |
 | tray icon | Show the bar, quit |
 
@@ -607,10 +607,10 @@ data exists.
 
 ### BLUEPRINTS tab
 
-`BLUEPRINTS` sits between `COMBAT` and `NOTES`. Type to filter by blueprint
-name, mission or source. Each row shows whether you own it and, once the
-mapping is filled in, progress through its set (`3 of 8 from Covalex Supply
-Run`) plus the `source` text explaining where it drops.
+`BLUEPRINTS` sits between `COMBAT` and `NOTES` and currently shows a **coming
+soon** card. A search needs the blueprint-to-mission table, which no public
+dataset exposes yet — SCMDB only offers it through its live search. Unlock
+tracking, the popup and the set progress below are unaffected.
 
 ### Importing unlocks from older logs
 

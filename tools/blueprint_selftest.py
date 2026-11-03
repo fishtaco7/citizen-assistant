@@ -467,10 +467,31 @@ def check_sets() -> None:
         assert not failed.loaded and failed.error
 
 
+def check_history() -> None:
+    """Backfill scans logbackups and the live log."""
+    from app.blueprint_history import history_logs, scan
+
+    with tempfile.TemporaryDirectory() as raw:
+        root = Path(raw)
+        backups = root / "logbackups"
+        backups.mkdir()
+        original = backups / "Game-2026-01-01.log"
+        original.write_text(
+            "irrelevant line\n" + BLUEPRINT_LINE + "\n", encoding="utf-8")
+        live = root / "Game.log"
+        live.write_text("nothing here\n", encoding="utf-8")
+
+        logs = history_logs(live)
+        assert logs[-1] == live
+        events = scan(logs)
+        assert any(event.kind == KIND_BLUEPRINT for event in events)
+
+
 def main() -> int:
     check_timestamp()
     check_parser()
     check_sets()
+    check_history()
     with tempfile.TemporaryDirectory() as raw:
         root = Path(raw)
         for name, check in (
