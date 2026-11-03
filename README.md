@@ -988,6 +988,7 @@ one — only the repository owner can push to it.
 | UEX opens the wrong page | The box should contain only the search term, then press **OPEN**. The footer shows the exact URL that was opened. |
 | Scanner shows `UNKNOWN` | The number is not in the table, or OCR dropped a digit. Check the raw value shown. |
 | Nothing appears in screenshots | Open `⚙` and set the screenshots button to **VISIBLE**. If it already says VISIBLE, your build predates the toggle: run with `--capture-visible`. |
+| Region lands on the wrong monitor (multi-monitor) | Fixed in v1.2.21: the OS monitor is matched by device name instead of resolution, so two identical displays no longer collide. Each calibration writes the mapping to `error.log`. |
 | Scanner stops reading after making screenshots visible | A panel now overlaps the calibrated scan box, so the scanner captures the overlay instead of the HUD. Move that panel away from the box, or set the screenshots button back to **HIDDEN** while mining. |
 | UI scale slider seems to do nothing | It needs a restart: press **RESTART** next to the slider (or quit and start again). The hint turns amber while the chosen scale is not active yet. |
 | `run.bat` says Python was not found | Install Python 3.11+ (64-bit) and tick “Add python.exe to PATH”, or run `setup.bat` once to create `C:\scov`. |

@@ -150,25 +150,83 @@ class ScanThread(QThread):
 
 
 # ---------------------------------------------------------------------------
+def _log(message: str) -> None:
+    """Append a diagnostic line to error.log. Never let logging break a scan."""
+    try:
+        stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(config_dir() / "error.log", "a", encoding="utf-8") as fh:
+            fh.write(f"[{stamp}] {message}\n")
+    except OSError:
+        pass
+
+
+def _monitor_for(screen, geo: QRect, dpr: float, monitors: list[dict]) -> dict | None:
+    """The OS monitor that belongs to a Qt screen.
+
+    Matching on size alone is wrong when two monitors share a resolution: the
+    first entry in the list wins, so a box drawn on the secondary display gets
+    mapped onto the primary one. Device names are unique, so they are tried
+    first; size is only a fallback, and only when it identifies exactly one
+    monitor.
+    """
+    name = str(screen.name() or "").strip().lower()
+    if name:
+        for mon in monitors:
+            if str(mon.get("name") or "").strip().lower() == name:
+                return mon
+
+    wanted_w = geo.width() * dpr
+    wanted_h = geo.height() * dpr
+    sized = [mon for mon in monitors
+             if abs(mon["width"] - wanted_w) <= 2
+             and abs(mon["height"] - wanted_h) <= 2]
+    if len(sized) == 1:
+        return sized[0]
+
+    # Identical panels: pick the one whose origin is closest to this screen's
+    # scaled origin. Correct whenever both panels use the same scaling, which
+    # is the case that reaches here.
+    if sized:
+        return min(sized,
+                   key=lambda mon: abs(mon["left"] - geo.x() * dpr)
+                   + abs(mon["top"] - geo.y() * dpr))
+    return None
+
+
 def logical_to_physical(rect: QRect) -> dict:
     """Qt global-logical rect -> mss physical-pixel rect."""
     screen = QGuiApplication.screenAt(rect.center()) or QGuiApplication.primaryScreen()
     geo = screen.geometry()
-    dpr = float(screen.devicePixelRatio())
+    dpr = float(screen.devicePixelRatio() or 1.0)
 
-    origin_x, origin_y = 0, 0
-    for mon in win32.monitors():
-        if (abs(mon["width"] - geo.width() * dpr) <= 2
-                and abs(mon["height"] - geo.height() * dpr) <= 2):
-            origin_x, origin_y = mon["left"], mon["top"]
-            break
+    mon = _monitor_for(screen, geo, dpr, win32.monitors())
+    if mon is not None:
+        origin_x, origin_y = mon["left"], mon["top"]
+    else:
+        # No match: the logical origin scaled by this screen's ratio is the
+        # best remaining guess, and still better than always using (0, 0).
+        origin_x = int(round(geo.x() * dpr))
+        origin_y = int(round(geo.y() * dpr))
 
-    return {
+    region = {
         "left": int(round(origin_x + (rect.x() - geo.x()) * dpr)),
         "top": int(round(origin_y + (rect.y() - geo.y()) * dpr)),
         "width": int(round(rect.width() * dpr)),
         "height": int(round(rect.height() * dpr)),
     }
+    if mon is not None:
+        _log(f"region: screen={screen.name()!r} dpr={dpr:g} "
+             f"logical={geo.x()},{geo.y()} {geo.width()}x{geo.height()} "
+             f"monitor={mon['name']!r} {mon['left']},{mon['top']} "
+             f"{mon['width']}x{mon['height']} -> "
+             f"{region['left']},{region['top']} "
+             f"{region['width']}x{region['height']}")
+    else:
+        _log(f"region: screen={screen.name()!r} dpr={dpr:g} "
+             f"logical={geo.x()},{geo.y()} {geo.width()}x{geo.height()} "
+             f"no monitor match -> {region['left']},{region['top']}")
+    return region
+
 
 
 def _tray_icon(size: int = 64) -> QIcon:

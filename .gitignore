@@ -7,3 +7,9 @@ tools/preview_out/
 build/
 dist/
 *.log
+
+# Local agent permissions and sandbox configuration. Never publish the machine's
+# paths or rules.
+opencode.jsonc
+opencode.json
+.opencode/
