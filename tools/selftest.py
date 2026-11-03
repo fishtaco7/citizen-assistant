@@ -74,6 +74,8 @@ def main() -> int:
         (10000, "Debris", 5),
         # Also an exact Savrilium x5 - debris wins the tie.
         (16000, "Debris", 8),
+        # Also an exact Lindinium x10.
+        (34000, "Debris", 17),
         # Larger wrecks exceed a 10-rock cluster; 22,000 used to fall through
         # to a fuzzy Quantanium guess.
         (22000, "Debris", 11),

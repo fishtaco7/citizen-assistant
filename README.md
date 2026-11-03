@@ -357,9 +357,11 @@ EPIC · Gold / Bexalite 5-10%
 - A leading `~` (`~QUANTANIUM`) means the number is *near* that ore's signature
   but not an exact multiple of it — a hint from OCR jitter, never a lock, and
   never spoken.
-- Some numbers are genuinely two things at once. `16,000` is eight debris
-  panels and also Savrilium ×5: debris leads, the ore is named in the detail
-  line (`OR SAVRILIUM ×5`), and the reading is **not** spoken aloud.
+- Some numbers are genuinely two things at once. A clean multiple of 2,000 is
+  debris even when an ore cluster divides into it: `16,000` (Savrilium ×5),
+  `18,000` (Bexalite ×5), `32,000` (Savrilium ×10), `34,000` (Lindinium ×10)
+  and `36,000` (Bexalite ×10). Debris leads, the ore is named in the detail
+  line, and the reading is **not** spoken aloud.
 - **73% MATCH** — OCR confidence, not mineral certainty. The signature itself
   is matched exactly against the table whenever possible.
 - A number already on screen is only replaced after two identical reads, so OCR
