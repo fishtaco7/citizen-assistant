@@ -1029,9 +1029,10 @@ class OverlayApp(QObject):
                 note = f"closest {near[0].name} ×{near[0].count} ({near[0].target:,})"
         self.panel.set_scan(value, res.confidence, "stable", matches, note)
 
-        # Announce only exact signatures: a fuzzy match is usually an OCR
-        # misread, and saying the wrong ore is worse than saying nothing.
-        if top is not None and top.exact:
+        # Announce only exact, unambiguous signatures: a fuzzy match is usually
+        # an OCR misread, and a signature that is equally an ore cluster and a
+        # debris field should not be spoken as a fact.
+        if top is not None and top.exact and not top.ambiguous:
             self._announce_signature(value, top)
 
     def _announce_signature(self, value: int, top) -> None:

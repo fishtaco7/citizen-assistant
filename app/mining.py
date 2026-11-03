@@ -34,6 +34,10 @@ class Match:
     value: float | None
     secondary: str | None
     short: str = ""
+    # True when another reading of the same signature is equally exact, e.g.
+    # 16,000 = Savrilium x5 = eight debris panels. The headline still prefers
+    # the ore, but nothing should be announced as fact.
+    ambiguous: bool = False
 
     @property
     def exact(self) -> bool:
@@ -132,16 +136,27 @@ class MiningData:
                 ))
 
         # Salvage: exterior hull panels and wreck scrap read as clean
-        # multiples of 2,000. In space that is far more likely than a ground
-        # deposit, so an exact multiple takes the headline and the ground
-        # reading (when one exists) is kept as an alternative in the detail.
+        # multiples of 2,000, and in practice a signature that divides evenly by
+        # 2,000 is debris even when an ore cluster could also produce it
+        # (16,000 = Savrilium x5). Debris therefore wins exact ties, and the ore
+        # reading is kept as an alternative in the detail line.
         if self.debris_base > 0 and value % self.debris_base == 0:
             count = value // self.debris_base
             if 1 <= count <= self.debris_max_cluster:
+                alternatives: list[str] = []
+                ship = next((m for m in matches
+                             if m.kind == "ship" and m.exact), None)
+                if ship is not None:
+                    alternatives.append(f"{ship.name.upper()} ×{ship.count}")
+                ground = next((m for m in matches
+                               if m.is_ground and m.exact), None)
+                if ground is not None:
+                    alternatives.append(f"{ground.label.upper()} ×{ground.count}")
+
                 detail = self.debris_detail
-                alt = next((m for m in matches if m.is_ground and m.exact), None)
-                if alt is not None:
-                    detail = f"{detail}  ·  OR {alt.label.upper()} ×{alt.count}"
+                if alternatives:
+                    detail = (f"{detail}  ·  OR "
+                              + " / ".join(alternatives))
                 matches.append(Match(
                     kind="debris",
                     name=self.debris_name,
@@ -151,9 +166,13 @@ class MiningData:
                     rarity=1,
                     value=None,
                     secondary=detail,
+                    ambiguous=bool(alternatives),
                 ))
 
-        matches.sort(key=lambda m: (not m.exact, m.delta, m.is_ground, -m.rarity))
+        # Debris wins exact ties: a signature that is a clean multiple of 2,000
+        # is salvage in practice, even when an ore cluster divides into it.
+        matches.sort(key=lambda m: (not m.exact, m.delta, m.is_ground,
+                                    0 if m.kind == "debris" else 1, -m.rarity))
         # In-game signatures are exact multiples of the base value, so an
         # exact hit is authoritative. Only fall back to fuzzy matches when
         # nothing lands exactly (usually an OCR misread).

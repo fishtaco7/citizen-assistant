@@ -72,6 +72,8 @@ def main() -> int:
         (6000, "Debris", 3),
         (8000, "Debris", 4),
         (10000, "Debris", 5),
+        # Also an exact Savrilium x5 - debris wins the tie.
+        (16000, "Debris", 8),
         # Larger wrecks exceed a 10-rock cluster; 22,000 used to fall through
         # to a fuzzy Quantanium guess.
         (22000, "Debris", 11),
@@ -83,6 +85,16 @@ def main() -> int:
         failures += 0 if ok else 1
         print(f"{value:>9,} -> {m[0].name if m else '-'} "
               f"x{m[0].count if m else 0}  {'PASS' if ok else 'FAIL'}")
+
+    # 16,000 is eight debris panels and also Savrilium x5. Debris leads and the
+    # reading is flagged ambiguous so it is never spoken as fact.
+    clash = data.lookup(16000)
+    ok = (bool(clash) and clash[0].name == "Debris"
+          and clash[0].ambiguous)
+    failures += 0 if ok else 1
+    print(f"{16000:>9,} -> {clash[0].name if clash else '-'} "
+          f"ambiguous={clash[0].ambiguous if clash else '-'}  "
+          f"{'PASS' if ok else 'FAIL'}")
 
     print("-" * 78)
     print("ALL CHECKS PASSED" if failures == 0 else f"{failures} CHECK(S) FAILED")
