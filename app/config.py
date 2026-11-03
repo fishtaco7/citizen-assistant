@@ -83,6 +83,10 @@ DEFAULTS: dict = {
     "inventory_pos": None,
     "uex_pos": None,
     "notes_pos": None,
+    "blueprints_pos": None,
+    # Import blueprint unlocks from Game.log backups once, when the registry is
+    # still empty. Set false to only ever import from the tray menu.
+    "blueprint_history_auto": True,
     "combat_pos": None,
     "open_tools": [],
     "hauling_cargo": 32,              # SCU used for trip-profit maths

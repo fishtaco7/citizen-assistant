@@ -18,6 +18,7 @@ from PySide6.QtGui import (QAction, QColor, QFont, QGuiApplication, QIcon,
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from . import win32
+from .blueprint_history import history_logs, scan
 from .blueprint_sets import BlueprintSets
 from .blueprints import BlueprintTracker
 from .capture import is_region_valid
@@ -28,6 +29,7 @@ from .hotkeys import HotkeyThread
 from .mining import MiningData
 from .orefinder import LiveData
 from .ui.blueprint_toast import BlueprintToast
+from .ui.blueprints_panel import BlueprintsPanel
 from .ui.combat_panel import CombatPanel
 from .ui.hauling_panel import HaulingPanel
 from .ui.inventory_panel import InventoryPanel
@@ -58,6 +60,8 @@ TOOLS = [
      "hint": "Remember loot and supplies left at other stations"},
     {"id": "combat", "label": "COMBAT", "enabled": True,
      "hint": "Live kill, soft-death and destruction feed from Game.log"},
+    {"id": "blueprints", "label": "BLUEPRINTS", "enabled": True,
+     "hint": "Search blueprints, what you own and where to get them"},
     {"id": "notes", "label": "NOTES", "enabled": True,
      "hint": "A notepad that saves itself"},
 ]
@@ -149,6 +153,29 @@ class ScanThread(QThread):
         finally:
             if grabber is not None:
                 grabber.close()
+
+
+class BlueprintHistoryWorker(QThread):
+    """Scan Game.log backups and record what it finds, off the GUI thread."""
+
+    progress = Signal(str)
+    finished_with = Signal(int, int, str)     # added, already known, error
+
+    def __init__(self, tracker, parent=None):
+        super().__init__(parent)
+        self._tracker = tracker
+
+    def run(self) -> None:  # noqa: D102
+        try:
+            logs = history_logs()
+            if not logs:
+                self.finished_with.emit(0, 0, "No Game.log backups found")
+                return
+            events = scan(logs, self.progress.emit)
+            added, known = self._tracker.backfill(events)
+            self.finished_with.emit(added, known, "")
+        except Exception as exc:            # report, never crash the app
+            self.finished_with.emit(0, 0, str(exc) or exc.__class__.__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -383,8 +410,11 @@ class OverlayApp(QObject):
         # Mission/set grouping is optional community data; without it the popup
         # still reports totals.
         self.blueprint_sets = BlueprintSets()
+        self.blueprints = BlueprintsPanel(self.blueprint_tracker,
+                                          self.blueprint_sets)
         self.blueprint_toast = BlueprintToast()
         self._session_blueprints = 0
+        self._history_worker: BlueprintHistoryWorker | None = None
 
         self.scan = ScanThread(self.data, cfg, demo=demo)
         self.scan.result.connect(self._on_result)
@@ -431,6 +461,7 @@ class OverlayApp(QObject):
         self.combat_panel.close_requested.connect(self._on_combat_close)
         self.uex.close_requested.connect(self._on_uex_close)
         self.notes.close_requested.connect(self._on_notes_close)
+        self.blueprints.close_requested.connect(self._on_blueprints_close)
         self.blueprint_unlocked_signal.connect(self._on_blueprint_unlocked)
         self.combat_event.connect(
             self.combat_panel.add_event,
@@ -467,6 +498,10 @@ class OverlayApp(QObject):
         act_combat = QAction("Combat feed", self)
         act_combat.triggered.connect(self._toggle_combat)
         menu.addAction(act_combat)
+
+        act_blueprints = QAction("Import blueprint history...", self)
+        act_blueprints.triggered.connect(self.import_blueprint_history)
+        menu.addAction(act_blueprints)
 
         menu.addSeparator()
         act_region = QAction("Select capture region…", self)
@@ -571,6 +606,13 @@ class OverlayApp(QObject):
             self.notes.place_default(self.panel)
         self.notes.clamp_to_screen()
 
+        blueprints_pos = self.cfg.get("blueprints_pos")
+        if isinstance(blueprints_pos, list) and len(blueprints_pos) == 2:
+            self.blueprints.move(int(blueprints_pos[0]), int(blueprints_pos[1]))
+        else:
+            self.blueprints.place_default(self.panel)
+        self.blueprints.clamp_to_screen()
+
         # Reopen whatever was on screen last time. A UI-scale restart used to
         # come back with every panel closed, which made the restart feel like a
         # crash instead of a settings change.
@@ -598,6 +640,10 @@ class OverlayApp(QObject):
         self.hotkeys.start()
         self.game_log.start()
 
+        if bool(self.cfg.get("blueprint_history_auto", True)):
+            # Give the registry worker a moment to load, then fill it once.
+            QTimer.singleShot(4000, self._maybe_import_history)
+
         if not has_region and not self.demo:
             self.panel.set_scan_idle("No capture region — open settings (⚙) to calibrate")
             QTimer.singleShot(650, self.select_region)
@@ -611,9 +657,10 @@ class OverlayApp(QObject):
                 win32.make_overlay_window(widget)
             except Exception:
                 pass
-        # HAULING, INVENTORY, UEX and NOTES have text controls, so they must be
-        # able to take keyboard focus.
-        for widget in (self.hauling, self.inventory, self.uex, self.notes):
+        # HAULING, INVENTORY, UEX, NOTES and BLUEPRINTS have text controls, so
+        # they must be able to take keyboard focus.
+        for widget in (self.hauling, self.inventory, self.uex, self.notes,
+                       self.blueprints):
             try:
                 win32.make_focusable_window(widget)
             except Exception:
@@ -630,7 +677,8 @@ class OverlayApp(QObject):
         show = self._capture_visible()
         for widget in (self.nav, self.panel, self.settings, self.orefinder,
                        self.hauling, self.inventory, self.uex, self.notes,
-                       self.blueprint_toast, self.combat_panel):
+                       self.blueprints, self.blueprint_toast,
+                       self.combat_panel):
             try:
                 if show:
                     win32.allow_capture(widget)
@@ -651,7 +699,8 @@ class OverlayApp(QObject):
     def _assert_topmost(self) -> None:
         for widget in (self.nav, self.panel, self.orefinder, self.hauling,
                        self.settings, self.inventory, self.uex, self.notes,
-                       self.blueprint_toast, self.combat_panel):
+                       self.blueprints, self.blueprint_toast,
+                       self.combat_panel):
             if not widget.isVisible():
                 continue
             try:
@@ -680,6 +729,7 @@ class OverlayApp(QObject):
         self.inventory.hide()
         self.uex.hide()
         self.notes.hide()
+        self.blueprints.hide()
         self.blueprint_toast.hide()
         self.combat_panel.hide()
         self.nav.set_active(None)
@@ -697,6 +747,8 @@ class OverlayApp(QObject):
             self._toggle_uex()
         elif tool_id == "notes":
             self._toggle_notes()
+        elif tool_id == "blueprints":
+            self._toggle_blueprints()
         elif tool_id == "combat":
             self._toggle_combat()
 
@@ -714,6 +766,8 @@ class OverlayApp(QObject):
             self._toggle_uex()
         elif tool_id == "notes" and not self.notes.isVisible():
             self._toggle_notes()
+        elif tool_id == "blueprints" and not self.blueprints.isVisible():
+            self._toggle_blueprints()
         elif tool_id == "combat" and not self.combat_panel.isVisible():
             self._toggle_combat()
         elif tool_id == "settings" and not self.settings.isVisible():
@@ -724,6 +778,7 @@ class OverlayApp(QObject):
                                 ("uex", self.uex),
                                 ("inventory", self.inventory),
                                 ("combat", self.combat_panel),
+                                ("blueprints", self.blueprints),
                                 ("notes", self.notes),
                                 ("orefinder", self.orefinder),
                                 ("mining", self.panel)):
@@ -783,6 +838,43 @@ class OverlayApp(QObject):
                     f"  ·  {self._session_blueprints} this session")
 
         self.blueprint_toast.show_blueprint(name, line)
+
+    # -- blueprint history ---------------------------------------------
+    def import_blueprint_history(self) -> None:
+        """Scan Game.log backups for unlocks earned before the overlay existed."""
+        if self._history_worker is not None and self._history_worker.isRunning():
+            return
+        self.tray.setToolTip(f"{APP_TITLE} · reading log backups...")
+        self._history_worker = BlueprintHistoryWorker(
+            self.blueprint_tracker, self)
+        self._history_worker.progress.connect(
+            lambda text: self.tray.setToolTip(f"{APP_TITLE} · {text}"))
+        self._history_worker.finished_with.connect(self._on_history_done)
+        self._history_worker.finished.connect(self._on_history_worker_done)
+        self._history_worker.start()
+
+    def _maybe_import_history(self) -> None:
+        """First run only: fill an empty registry without being asked."""
+        if self.blueprint_tracker.blueprints:
+            return
+        self.import_blueprint_history()
+
+    def _on_history_done(self, added: int, known: int, error: str) -> None:
+        if error:
+            message = f"Blueprint import failed: {error}"
+        elif added or known:
+            message = (f"Imported {added} new blueprint(s)"
+                       + (f", {known} already known" if known else ""))
+        else:
+            message = "No blueprints found in the log backups"
+        self.tray.showMessage(APP_TITLE, message,
+                              QSystemTrayIcon.MessageIcon.Information, 8000)
+        if added or known:
+            self.blueprints.refresh()
+
+    def _on_history_worker_done(self) -> None:
+        self.tray.setToolTip(APP_TITLE)
+        self._history_worker = None
 
     def _toggle_panel(self, tool_id: str) -> None:
         if tool_id != "mining":
@@ -871,6 +963,21 @@ class OverlayApp(QObject):
 
     def _on_notes_close(self) -> None:
         self.notes.hide()
+        self._sync_nav_active()
+
+    def _toggle_blueprints(self) -> None:
+        if self.blueprints.isVisible():
+            self.blueprints.hide()
+            self._sync_nav_active()
+            return
+        self.blueprints.clamp_to_screen()
+        self.blueprints.show()
+        self.blueprints.raise_()
+        self.nav.set_active("blueprints")
+        self._assert_topmost()
+
+    def _on_blueprints_close(self) -> None:
+        self.blueprints.hide()
         self._sync_nav_active()
 
     def _toggle_combat(self) -> None:
@@ -1138,6 +1245,8 @@ class OverlayApp(QObject):
                                       self.combat_panel.y()]
             self.cfg["uex_pos"] = [self.uex.x(), self.uex.y()]
             self.cfg["notes_pos"] = [self.notes.x(), self.notes.y()]
+            self.cfg["blueprints_pos"] = [self.blueprints.x(),
+                                          self.blueprints.y()]
             self.cfg["open_tools"] = [
                 tool_id for tool_id, widget in (
                     ("mining", self.panel),
@@ -1146,6 +1255,7 @@ class OverlayApp(QObject):
                     ("uex", self.uex),
                     ("inventory", self.inventory),
                     ("combat", self.combat_panel),
+                    ("blueprints", self.blueprints),
                     ("notes", self.notes),
                     ("settings", self.settings),
                 ) if widget.isVisible()]
@@ -1269,7 +1379,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="do not hide the overlay from screen capture (debugging/streaming)")
     parser.add_argument("--open", choices=("mining", "orefinder",
                                            "hauling", "inventory", "uex",
-                                           "combat", "notes", "settings"),
+                                           "combat", "notes", "blueprints",
+                                           "settings"),
                         help="open a tool at startup (debugging)")
     parser.add_argument("--restart", action="store_true",
                         help=argparse.SUPPRESS)

@@ -40,7 +40,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterable
 
 from .blueprint_log import (
     KIND_BLUEPRINT,
@@ -826,6 +826,33 @@ class BlueprintTracker:
 
     def is_unlocked(self, value: str, kind: str = KIND_BLUEPRINT) -> bool:
         return self._store.has(value, kind)
+
+    def backfill(self, events: Iterable[BlueprintLogEvent]) -> tuple[int, int]:
+        """Record historical unlocks silently.
+
+        Returns ``(new, already_known)``. Nothing is published on the bus, so a
+        backfill of hundreds of past unlocks cannot fire a toast storm. The
+        caller should run this off the GUI thread: the registry is written once
+        at the end.
+        """
+        if self._store_needs_load:
+            self._store.load()
+            self._store_needs_load = not self._store.loaded
+
+        added = known = 0
+        for event in events:
+            record, is_new = self._store.record(event)
+            if record is None:
+                continue
+            if is_new:
+                added += 1
+            else:
+                known += 1
+        if added or known:
+            self._store.save()
+            with self._lock:
+                self._updated_at = self._clock()
+        return added, known
 
     @property
     def stats(self) -> BlueprintStats:

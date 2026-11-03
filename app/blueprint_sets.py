@@ -29,6 +29,7 @@ log line and any list you copy will rarely agree on capitalisation.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping
 
@@ -42,6 +43,15 @@ def _key(value: object) -> str:
     return str(value or "").strip().casefold()
 
 
+@dataclass(frozen=True)
+class SetInfo:
+    """One mission/pool: its name, its members and where it comes from."""
+
+    name: str
+    blueprints: tuple[str, ...]
+    source: str = ""
+
+
 class BlueprintSets:
     """Blueprint name -> set name, plus membership for progress counts."""
 
@@ -50,6 +60,7 @@ class BlueprintSets:
         self.error = ""
         self._set_of: dict[str, str] = {}
         self._members: dict[str, list[str]] = {}
+        self._source: dict[str, str] = {}
         self.load(path)
 
     # ------------------------------------------------------------------
@@ -70,6 +81,7 @@ class BlueprintSets:
     def _read(self, path: Path) -> None:
         self._set_of.clear()
         self._members.clear()
+        self._source.clear()
         self.error = ""
         try:
             with open(path, "r", encoding="utf-8") as fh:
@@ -83,11 +95,21 @@ class BlueprintSets:
 
         sets = raw.get("sets")
         if isinstance(sets, Mapping):
-            for name, members in sets.items():
+            for name, value in sets.items():
                 set_name = str(name).strip()
-                if not set_name or not isinstance(members, list):
+                if not set_name:
                     continue
+                source = ""
+                if isinstance(value, Mapping):
+                    source = str(value.get("source") or "").strip()
+                    members = value.get("blueprints")
+                else:
+                    members = value
+                if not isinstance(members, list):
+                    members = []
                 self._members.setdefault(set_name, [])
+                if source:
+                    self._source[set_name] = source
                 for member in members:
                     text = str(member).strip()
                     if not text:
@@ -112,6 +134,16 @@ class BlueprintSets:
 
     def set_for(self, blueprint: str) -> str | None:
         return self._set_of.get(_key(blueprint))
+
+    def source_for(self, set_name: str) -> str:
+        return self._source.get(set_name, "")
+
+    def catalogue(self) -> list[SetInfo]:
+        """Every known set, for the BLUEPRINTS tab."""
+        return [SetInfo(name=name,
+                        blueprints=tuple(members),
+                        source=self._source.get(name, ""))
+                for name, members in self._members.items()]
 
     def progress(self, set_name: str,
                  unlocked: Iterable[str]) -> tuple[int, int]:

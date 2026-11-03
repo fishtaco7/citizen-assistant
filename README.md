@@ -307,6 +307,7 @@ game, run it borderless / windowed fullscreen rather than exclusive.
 | `HAULING` on the nav bar | Show / hide trade routes and hauling contracts |
 | `INVENTORY` on the nav bar | Show / hide manual stash notes |
 | `COMBAT` on the nav bar | Show / hide the live Game.log combat feed |
+| `BLUEPRINTS` on the nav bar | Search blueprints, ownership and where they drop |
 | `NOTES` on the nav bar | Show / hide the notepad |
 | tray icon | Show the bar, quit |
 
@@ -587,7 +588,10 @@ bundled `app/data/blueprint_sets.json` is only a template:
 ```json
 {
   "sets": {
-    "Covalex Supply Run": ["Defiance Helmet Tactical", "Pembroke RSI"]
+    "Covalex Supply Run": {
+      "source": "Covalex hauling missions, one blueprint per completion",
+      "blueprints": ["Defiance Helmet Tactical", "Pembroke RSI"]
+    }
   },
   "blueprints": {
     "Some Other Blueprint": "Vaughn's Salvage"
@@ -595,10 +599,30 @@ bundled `app/data/blueprint_sets.json` is only a template:
 }
 ```
 
-`sets` lists a whole pool; `blueprints` assigns one name at a time. Names match
+`sets` accepts either a plain list of names or an object with `source` and
+`blueprints`; `blueprints` assigns one name at a time. Names match
 case-insensitively with whitespace ignored. Without a mapping the card falls
 back to `47 unlocked in total · 3 this session`, so the feature works before any
 data exists.
+
+### BLUEPRINTS tab
+
+`BLUEPRINTS` sits between `COMBAT` and `NOTES`. Type to filter by blueprint
+name, mission or source. Each row shows whether you own it and, once the
+mapping is filled in, progress through its set (`3 of 8 from Covalex Supply
+Run`) plus the `source` text explaining where it drops.
+
+### Importing unlocks from older logs
+
+The registry only knows what it has seen, so blueprints earned before the
+overlay was installed are missing. Star Citizen rotates `Game.log` into a
+`logbackups/` folder beside the LIVE build, and those files still contain the
+`Received Blueprint` lines.
+
+The overlay scans them automatically on first launch when the registry is empty
+(`blueprint_history_auto` in `config.json`), and **Import blueprint history...**
+in the tray menu runs it again whenever you want. The import is silent: no toast
+per recovered blueprint, just one tray notification with the totals.
 
 The canonical blueprint notification is the authoritative line Star Citizen
 writes for an unlock:
