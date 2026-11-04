@@ -307,7 +307,7 @@ game, run it borderless / windowed fullscreen rather than exclusive.
 | `HAULING` on the nav bar | Show / hide trade routes and hauling contracts |
 | `INVENTORY` on the nav bar | Show / hide manual stash notes |
 | `COMBAT` on the nav bar | Show / hide the live Game.log combat feed |
-| `BLUEPRINTS` on the nav bar | Blueprint lookup (coming soon) |
+| `BLUEPRINTS` on the nav bar | Search blueprints, missions, reputation and materials |
 | `NOTES` on the nav bar | Show / hide the notepad |
 | tray icon | Show the bar, quit |
 
@@ -606,22 +606,43 @@ case-insensitively with whitespace ignored. Without a mapping the card falls
 back to `47 unlocked in total · 3 this session`, so the feature works before any
 data exists.
 
-SCMDB publishes a merged game dump per patch; `tools/scmdb_import.py` turns its
-contract rewards into this file:
-
-```bash
-python -m tools.scmdb_import ~/Documents/projects/scmdb/merged.json
-```
-
-It prints `N sets, M blueprint assignments` and writes
-`%APPDATA%\Citizen Assistant\blueprint_sets.json`. Re-run it after a patch.
+SCMDB publishes a merged game dump per patch; *Generating the data* below turns
+it into this file. Re-run the importer after a patch and the mapping is current.
 
 ### BLUEPRINTS tab
 
-`BLUEPRINTS` sits between `COMBAT` and `NOTES` and currently shows a **coming
-soon** card. A search needs the blueprint-to-mission table, which no public
-dataset exposes yet — SCMDB only offers it through its live search. Unlock
-tracking, the popup and the set progress below are unaffected.
+`BLUEPRINTS` sits between `COMBAT` and `NOTES`. Type to filter by blueprint,
+mission, reputation or material. Each row shows:
+
+```text
+Trawler Scraper Module                              HAVE
+2 of 5 · Headhunters: [DESTINATION] Salvage · Sr. Contractor (5800 rep)
+2 Titanium  ·  2 Riccite
+```
+
+- the first line is the blueprint and whether you own it
+- the second is progress through its mission set plus the reputation gate
+- the third is tier-1 materials, once the crafting file is generated
+
+The list is built from your registry, the generated mission mapping and the
+generated recipes, so it also covers blueprints you do not own yet.
+
+### Generating the data
+
+SCMDB publishes a merged game dump and a crafting dump per patch:
+
+```bash
+python -m tools.scmdb_import ~/Documents/projects/scmdb/merged.json \
+  --recipes ~/Documents/projects/scmdb/blueprints.json
+```
+
+That writes `blueprint_sets.json` and `blueprint_crafting.json` into
+`%APPDATA%\Citizen Assistant\`. The importer prints how many sets, assignments,
+recipes and unmatched recipes it produced. Re-run it after a patch.
+
+The data belongs to SCMDB and, underneath, to CIG's game files. It is generated
+locally rather than committed, which keeps the repository free of redistributed
+game data and always current for the build you play.
 
 ### Importing unlocks from older logs
 

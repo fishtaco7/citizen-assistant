@@ -18,6 +18,7 @@ from PySide6.QtGui import (QAction, QColor, QFont, QGuiApplication, QIcon,
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from . import win32
+from .blueprint_crafting import CraftingData
 from .blueprint_history import history_logs, scan
 from .blueprint_sets import BlueprintSets
 from .blueprints import BlueprintTracker
@@ -410,8 +411,10 @@ class OverlayApp(QObject):
         # Mission/set grouping is optional community data; without it the popup
         # still reports totals.
         self.blueprint_sets = BlueprintSets()
+        self.blueprint_crafting = CraftingData()
         self.blueprints = BlueprintsPanel(self.blueprint_tracker,
-                                          self.blueprint_sets)
+                                          self.blueprint_sets,
+                                          self.blueprint_crafting)
         self.blueprint_toast = BlueprintToast()
         self._session_blueprints = 0
         self._history_worker: BlueprintHistoryWorker | None = None
