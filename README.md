@@ -1,8 +1,17 @@
 # Citizen Assistant
 
-A small Star Citizen overlay. Press **F3** for a nav bar at the top of the screen;
-the first tool is a **mining scanner** that reads the signature number from the
-scan HUD and tells you what the rock is.
+A small Star Citizen overlay. Press **F3** for a nav bar at the top of the screen
+and pick a tool.
+
+| Tool | What it does |
+| --- | --- |
+| **Mining scanner** | Reads the signature number off the scan HUD and tells you what the rock is, before you commit. |
+| **Ore finder** | What each ore is worth and where to sell it. |
+| **HAULING** | Route and contract helpers built on read-only public APIs. |
+| **INVENTORY** | What you own, tracked from the game log. |
+| **COMBAT** | Damage, kills and soft deaths from `Game.log`, live. |
+| **BLUEPRINTS** | Every blueprint a mission can award, with a crafting calculator: materials, quality sliders and the resulting stats. |
+| **NOTES** | Scratchpad that survives restarts. |
 
 The scanner and ore finder use screen capture + OCR; the hauling tools use
 read-only public HTTP APIs. The combat tracker tails `Game.log` for damage,
