@@ -14,9 +14,19 @@ against sccraftlab's bundle, whose `Jp` function does exactly this.
 """
 from __future__ import annotations
 
+# sccraftlab combines these with `stacked`; everything else is additive. The
+# names differ per item type (power plants, armour, weapons) but the rule is
+# the same: only mitigation multiplies.
+_STACKED_KEYS = {"armordamagemitigation", "armormitigation"}
+
 
 def _clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
+
+
+def _normalise(key: str) -> str:
+    return "".join(character for character in key.casefold()
+                   if character.isalnum())
 
 
 def factor(modifier: dict, quality: float) -> float:
@@ -93,7 +103,8 @@ def changes(materials: list[dict], qualities: list[float]) -> dict[str, dict]:
             result[key] = {"name": names.get(key, key), "percent": None,
                            "delta": added.get(key, 0.0)}
         else:
-            value = (stacked.get(key, 1.0) if "mitigation" in key
+            value = (stacked.get(key, 1.0)
+                     if _normalise(key) in _STACKED_KEYS
                      else 1.0 + deviation.get(key, 0.0))
             result[key] = {"name": names.get(key, key), "percent":
                            (value - 1.0) * 100.0, "delta": None}
