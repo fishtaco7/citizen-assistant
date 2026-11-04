@@ -462,11 +462,31 @@ class BlueprintsPanel(QWidget):
         layout.addWidget(text, 1)
         return row
 
+    def _ordered_sets(self, name: str, unlocked: list[str]) -> list[str]:
+        """Mission pools for a blueprint, best first.
+
+        A blueprint can sit in several pools. Prefer the one already part-owned,
+        then the lowest reputation gate, so the detail opens on the most
+        reachable route rather than whichever contract came first in the dump.
+        """
+        names = self._sets.sets_for(name)
+        if not names:
+            first = self._sets.set_for(name)
+            names = [first] if first else []
+
+        def score(set_name: str):
+            have, _total = self._sets.progress(set_name, unlocked)
+            info = self._sets.info_for(set_name)
+            reputation = info.reputation if info is not None else 0.0
+            return (-have, reputation, set_name)
+
+        return sorted(names, key=score)
+
     def _fill_unlock(self, name: str, unlocked: list[str], record=None) -> None:
         """Mission, faction, rank and location for the detail header."""
         self._clear_unlock_rows()
-        set_name = self._sets.set_for(name)
-        if not set_name:
+        choices = self._ordered_sets(name, unlocked)
+        if not choices:
             if record is not None and record.first_seen_iso:
                 self.detail_where.setText(
                     f"Unlocked {record.first_seen_iso[:10]} · source unknown")
@@ -474,9 +494,12 @@ class BlueprintsPanel(QWidget):
                 self.detail_where.setText("Source not mapped")
             return
 
+        set_name = choices[0]
         have, total = self._sets.progress(set_name, unlocked)
-        self.detail_where.setText(f"{have} of {total} owned" if total
-                                  else "Owned")
+        progress = f"{have} of {total} owned" if total else "Owned"
+        if len(choices) > 1:
+            progress += f" · {len(choices)} missions"
+        self.detail_where.setText(progress)
 
         info = self._sets.info_for(set_name)
         mission = set_name
@@ -512,17 +535,33 @@ class BlueprintsPanel(QWidget):
             if parts:
                 rows.append(("Where", " · ".join(parts)))
 
+        for alternative in choices[1:4]:
+            label = alternative.rsplit(" · ", 1)[0]
+            other = self._sets.info_for(alternative)
+            detail = ""
+            if other is not None and other.faction:
+                detail = other.faction
+                if other.rank:
+                    detail = f"{detail} · {other.rank}"
+            rows.append(("Also", f"{label}  ({detail})" if detail else label))
+        if len(choices) > 4:
+            rows.append(("Also", f"+{len(choices) - 4} more missions"))
+
         for label, value in rows:
             self.unlock_layout.addWidget(self._info_row(label, value))
 
     def _where(self, name: str, unlocked: list[str], record=None) -> str:
-        set_name = self._sets.set_for(name)
-        if set_name:
+        choices = self._ordered_sets(name, unlocked)
+        if choices:
+            set_name = choices[0]
             have, total = self._sets.progress(set_name, unlocked)
             parts = [f"{have} of {total} · {set_name}" if total else set_name]
             requires = self._sets.requires_for(set_name)
             if requires:
                 parts.append(requires)
+            extra = len(choices) - 1
+            if extra > 0:
+                parts.append(f"+{extra} more mission{'s' if extra > 1 else ''}")
             return "  ·  ".join(parts)
         if record is not None and record.first_seen_iso:
             return f"Unlocked {record.first_seen_iso[:10]}  ·  source unknown"

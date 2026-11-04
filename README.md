@@ -631,6 +631,7 @@ MISSION   Headhunters: [TARGET] needs stomping
 FACTION   Headhunters
 REQUIRED  Sr. Contractor · 5,800 rep
 WHERE     Last Landings · Rustville · Seers Canyon · Pyro
+ALSO      Citizens for Prosperity: Cargo Shipment Must Be Completed  (Citizens For Prosperity · Sr. Contractor)
 
 SHELL
 Stileron                                        4.3 SCU
@@ -660,8 +661,11 @@ updates the quantity, the slider's floor and the weighted craft quality.
 Above the parts, the detail view spells out how to earn the blueprint: the
 mission, the faction whose reputation gates it, the rank and reputation needed,
 and **where the mission is offered** — the outposts or stations resolved from the
-contract's location ids (up to three), then the system. Bundled data that
-predates these fields falls back to the mission and reputation line.
+contract's location ids (up to three), then the system. A blueprint can sit in
+several pools at once (the S71 Rifle is in five), so the primary route is the one
+you have most progress in, then the lowest reputation gate, and the rest are
+listed under **ALSO**. Bundled data that predates these fields falls back to the
+mission and reputation line.
 
 The recipe dump also contains variants that exist in the game files but that no
 mission awards yet. They are hidden rather than listed as unearnable; the footer

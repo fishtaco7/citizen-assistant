@@ -77,6 +77,7 @@ class BlueprintSets:
         self.path: Path | None = None
         self.error = ""
         self._set_of: dict[str, str] = {}
+        self._sets_of: dict[str, list[str]] = {}
         self._members: dict[str, list[str]] = {}
         self._source: dict[str, str] = {}
         self._requires: dict[str, str] = {}
@@ -110,6 +111,7 @@ class BlueprintSets:
 
     def _read(self, path: Path) -> None:
         self._set_of.clear()
+        self._sets_of.clear()
         self._members.clear()
         self._source.clear()
         self._requires.clear()
@@ -189,8 +191,12 @@ class BlueprintSets:
                     text = str(member).strip()
                     if not text:
                         continue
+                    key = _key(text)
                     self._members[set_name].append(text)
-                    self._set_of.setdefault(_key(text), set_name)
+                    self._set_of.setdefault(key, set_name)
+                    bucket = self._sets_of.setdefault(key, [])
+                    if set_name not in bucket:
+                        bucket.append(set_name)
 
         single = raw.get("blueprints")
         if isinstance(single, Mapping):
@@ -210,6 +216,10 @@ class BlueprintSets:
     def set_for(self, blueprint: str) -> str | None:
         return self._set_of.get(_key(blueprint))
 
+    def sets_for(self, blueprint: str) -> list[str]:
+        """Every mission pool that awards this blueprint, not just the first."""
+        return list(self._sets_of.get(_key(blueprint), []))
+
     def source_for(self, set_name: str) -> str:
         return self._source.get(set_name, "")
 
@@ -217,10 +227,19 @@ class BlueprintSets:
         return self._requires.get(set_name, "")
 
     def info_for(self, set_name: str) -> SetInfo | None:
-        for info in self.catalogue():
-            if info.name == set_name:
-                return info
-        return None
+        if set_name not in self._members:
+            return None
+        return SetInfo(name=set_name,
+                       blueprints=tuple(self._members.get(set_name, ())),
+                       source=self._source.get(set_name, ""),
+                       requires=self._requires.get(set_name, ""),
+                       faction=self._faction.get(set_name, ""),
+                       rank=self._rank.get(set_name, ""),
+                       reputation=self._reputation.get(set_name, 0.0),
+                       system=self._system.get(set_name, ""),
+                       location=self._location.get(set_name, ""),
+                       places=tuple(self._places.get(set_name, ())),
+                       title=self._title.get(set_name, ""))
 
     def catalogue(self) -> list[SetInfo]:
         """Every known set, for the BLUEPRINTS tab."""
