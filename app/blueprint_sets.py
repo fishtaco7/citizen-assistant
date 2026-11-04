@@ -66,6 +66,7 @@ class SetInfo:
     reputation: float = 0.0
     system: str = ""
     location: str = ""
+    places: tuple[str, ...] = ()
     title: str = ""
 
 
@@ -84,6 +85,7 @@ class BlueprintSets:
         self._reputation: dict[str, float] = {}
         self._system: dict[str, str] = {}
         self._location: dict[str, str] = {}
+        self._places: dict[str, list[str]] = {}
         self._title: dict[str, str] = {}
         self.load(path)
 
@@ -116,6 +118,7 @@ class BlueprintSets:
         self._reputation.clear()
         self._system.clear()
         self._location.clear()
+        self._places.clear()
         self._title.clear()
         self.error = ""
         try:
@@ -141,6 +144,7 @@ class BlueprintSets:
                 reputation = 0.0
                 system = ""
                 location = ""
+                places: list[str] = []
                 title = ""
                 if isinstance(value, Mapping):
                     source = str(value.get("source") or "").strip()
@@ -149,6 +153,9 @@ class BlueprintSets:
                     rank = str(value.get("rank") or "").strip()
                     system = str(value.get("system") or "").strip()
                     location = str(value.get("location") or "").strip()
+                    places = [str(place).strip()
+                              for place in value.get("places") or []
+                              if str(place).strip()]
                     title = str(value.get("title") or "").strip()
                     try:
                         reputation = float(value.get("reputation") or 0.0)
@@ -174,6 +181,8 @@ class BlueprintSets:
                     self._system[set_name] = system
                 if location:
                     self._location[set_name] = location
+                if places:
+                    self._places[set_name] = places
                 if title:
                     self._title[set_name] = title
                 for member in members:
@@ -224,6 +233,7 @@ class BlueprintSets:
                         reputation=self._reputation.get(name, 0.0),
                         system=self._system.get(name, ""),
                         location=self._location.get(name, ""),
+                        places=tuple(self._places.get(name, ())),
                         title=self._title.get(name, ""))
                 for name, members in self._members.items()]
 

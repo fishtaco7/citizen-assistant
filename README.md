@@ -621,7 +621,7 @@ JS-500                                        HAVEN
 MISSION   Headhunters: [TARGET] needs stomping
 FACTION   Headhunters
 REQUIRED  Sr. Contractor · 5,800 rep
-LOCATION  Pyro
+WHERE     Last Landings · Rustville · Seers Canyon · Pyro
 
 SHELL
 Stileron                                        4.3 SCU
@@ -650,9 +650,9 @@ updates the quantity, the slider's floor and the weighted craft quality.
 
 Above the parts, the detail view spells out how to earn the blueprint: the
 mission, the faction whose reputation gates it, the rank and reputation needed,
-and where it runs — the outpost from the contract's prerequisites plus the system
-it is offered in. Bundled data that predates these fields still shows the
-mission and the reputation line.
+and **where the mission is offered** — the outposts or stations resolved from the
+contract's location ids (up to three), then the system. Bundled data that
+predates these fields falls back to the mission and reputation line.
 
 The recipe dump also contains variants that exist in the game files but that no
 mission awards yet. They are hidden rather than listed as unearnable; the footer

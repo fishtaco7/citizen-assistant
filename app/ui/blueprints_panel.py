@@ -498,11 +498,15 @@ class BlueprintsPanel(QWidget):
 
         if info is not None:
             parts: list[str] = []
-            for part in (info.location, info.system):
-                if part and part not in parts:
-                    parts.append(part)
+            for place in list(info.places)[:3]:
+                if place not in parts:
+                    parts.append(place)
+            if not parts and info.location:
+                parts.append(info.location)
+            if info.system and info.system not in parts:
+                parts.append(info.system)
             if parts:
-                rows.append(("Location", " · ".join(parts)))
+                rows.append(("Where", " · ".join(parts)))
 
         for label, value in rows:
             self.unlock_layout.addWidget(self._info_row(label, value))

@@ -89,6 +89,31 @@ def _reputation(contract: dict,
             "reputation": rank_rep, "text": text}
 
 
+def _places(contract: dict, index: dict) -> tuple[list[str], list[str]]:
+    """(place names, systems) where the mission can be picked up.
+
+    ``locations`` is where the contract is offered, which is what matters for a
+    blueprint drop. ``destinations`` only stands in when a contract has no
+    offering location, and unresolved ids or placeholder names are skipped.
+    """
+    places: list[str] = []
+    systems: list[str] = []
+    for field in ("locations", "destinations"):
+        for identifier in contract.get(field) or []:
+            entry = index.get(str(identifier))
+            if not isinstance(entry, dict):
+                continue
+            name = str(entry.get("name") or "").strip()
+            if name and not name.startswith("<=") and name not in places:
+                places.append(name)
+            system = str(entry.get("system") or "").strip()
+            if system and system not in systems:
+                systems.append(system)
+        if places:
+            break
+    return places, systems
+
+
 def _entity_names(data: dict) -> dict[str, str]:
     """entityClass GUID -> blueprint display name, taken from the reward pools."""
     names: dict[str, str] = {}
@@ -206,6 +231,7 @@ def build(data: dict) -> dict[str, dict]:
     """{set name: {source, requires, blueprints[]}} from a merged SCMDB dump."""
     pools = data.get("blueprintPools") or {}
     contracts = data.get("contracts") or []
+    places_index = data.get("locationPools") or {}
     ranks = _rank_index(data)
     sets: dict[str, dict] = {}
 
@@ -233,19 +259,22 @@ def build(data: dict) -> dict[str, dict]:
         faction = rep["faction"]
         requires = rep["text"]
 
-        # Where the mission sends you: the system it runs in and the concrete
-        # outpost/station from the prerequisites, when the contract names one.
-        system = ", ".join(
-            str(name).strip()
-            for name in contract.get("availableSystems") or []
-            if str(name).strip())
-        places: list[str] = []
-        for place in (contract.get("prerequisites") or {}).get("location") or []:
-            if not isinstance(place, dict):
-                continue
-            label = str(place.get("name") or "").strip()
-            if label and label not in places:
-                places.append(label)
+        # Where the mission can be picked up. The resolved location ids name the
+        # actual outposts/stations; fall back to the prerequisite's label (often
+        # just the system) when a contract has no ids.
+        places, systems = _places(contract, places_index)
+        if not places:
+            for place in (contract.get("prerequisites") or {}).get("location") or []:
+                if not isinstance(place, dict):
+                    continue
+                label = str(place.get("name") or "").strip()
+                if label and label not in places:
+                    places.append(label)
+        for name in contract.get("availableSystems") or []:
+            text = str(name).strip()
+            if text and text not in systems:
+                systems.append(text)
+        system = ", ".join(systems)
 
         # Keep rank variants apart: the same title at a different standing
         # awards a different pool, so merging them would blur the progress.
@@ -267,7 +296,7 @@ def build(data: dict) -> dict[str, dict]:
                 ("rank", rep["rank"]),
                 ("reputation", rep["reputation"]),
                 ("system", system),
-                ("location", ", ".join(places[:4])),
+                ("places", places[:6]),
                 ("title", title),
                 ("missionType", str(contract.get("missionType") or "").strip())):
             if value and not entry.get(field):
