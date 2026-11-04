@@ -1,24 +1,20 @@
 # Citizen Assistant
 
-A small Star Citizen overlay. Press **F3** for a nav bar at the top of the screen
-and pick a tool.
+A friendly little overlay for Star Citizen. Press **F3** and a small bar appears
+with the tools you actually use — no alt-tabbing, no second monitor.
 
-| Tool | What it does |
+| Tool | In plain words |
 | --- | --- |
-| **Mining scanner** | Reads the signature number off the scan HUD and tells you what the rock is, before you commit. |
-| **Ore finder** | What each ore is worth and where to sell it. |
-| **HAULING** | Route and contract helpers built on read-only public APIs. |
-| **INVENTORY** | What you own, tracked from the game log. |
-| **COMBAT** | Damage, kills and soft deaths from `Game.log`, live. |
-| **BLUEPRINTS** | Every blueprint a mission can award, with a crafting calculator: materials, quality sliders and the resulting stats. |
-| **NOTES** | Scratchpad that survives restarts. |
+| **Mining scanner** | Reads the number on the scan HUD and tells you what the rock is before you crack it. |
+| **Ore finder** | What each ore is worth, and where to sell it. |
+| **HAULING** | Contracts and routes, with the boring maths done for you. |
+| **INVENTORY** | What you own, kept up to date from the game log. |
+| **COMBAT** | Damage, kills and soft deaths as they happen. |
+| **BLUEPRINTS** | Every blueprint you can earn, how to unlock it, and what your materials will make. |
+| **NOTES** | A scratchpad that survives a restart. |
 
-The scanner and ore finder use screen capture + OCR; the hauling tools use
-read-only public HTTP APIs. The combat tracker tails `Game.log` for damage,
-kills and soft deaths and feeds the **COMBAT** tab. The headless
-blueprint/inventory tracker tails the same log for blueprint unlocks and item
-acquisitions, then publishes structured events to the host overlay. Nothing
-reads game memory, injects code, or synthesises input.
+It only reads two things: Star Citizen's game log, and the little patch of screen
+you point it at. No memory reading, no injection, no fake inputs.
 
 ---
 
