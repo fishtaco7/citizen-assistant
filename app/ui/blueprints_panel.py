@@ -480,11 +480,6 @@ class BlueprintsPanel(QWidget):
         slot.setStyleSheet(theme.qss(
             "color: rgba(168,184,200,0.95); background: transparent;"))
         head.addWidget(slot, 1)
-        count = QLabel(f"×{quantity:g}")
-        count.setFont(theme.font(7, QFont.Weight.Medium))
-        count.setStyleSheet(theme.qss(
-            "color: rgba(110,126,142,0.95); background: transparent;"))
-        head.addWidget(count)
         layout.addLayout(head)
 
         line = QHBoxLayout()

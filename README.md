@@ -619,12 +619,12 @@ reputation gate, and tier-1 materials. **Click a row** for the detail view:
 JS-500                                        HAVEN
 2 of 6 · Headhunters: [TARGET] … · Sr. Contractor (5800 rep)
 
-SHELL                                             ×4.3
+SHELL
 Stileron                                        4.3 SCU
 QUALITY  ──────────●───────────────────────  [ 834]
 Integrity +13.35%
 
-VOLTAGE REGULATOR                                 ×1.7
+VOLTAGE REGULATOR
 Beryl                                           1.7 SCU
 QUALITY  ───────────────●─────────────────  [ 759]
 Power Pips +1
