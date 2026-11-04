@@ -28,30 +28,71 @@ if str(ROOT) not in sys.path:
 from app.config import config_dir  # noqa: E402
 
 
-def _reputation(contract: dict) -> str:
-    """Faction and standing the contract requires, as display text."""
-    parts: list[str] = []
-    for lock in contract.get("reputationLockout") or []:
-        if not isinstance(lock, dict):
+def _rank_index(data: dict) -> dict[str, tuple[str, float]]:
+    """nameKey -> (rank name, minimum reputation) from the scopes table."""
+    index: dict[str, tuple[str, float]] = {}
+    for scope in (data.get("scopes") or {}).values():
+        if not isinstance(scope, dict):
             continue
-        faction = str(lock.get("factionName") or "").strip()
-        standing = lock.get("minStanding") or {}
-        rank = str(standing.get("name") or "").strip()
-        value = standing.get("minReputation")
-        bit = faction or "Faction"
-        if rank:
-            bit = f"{bit} {rank}"
-        if isinstance(value, (int, float)) and value:
-            bit = f"{bit} ({int(value)} rep)"
-        if bit and bit not in parts:
-            parts.append(bit)
-    return "  ·  ".join(parts)
+        for rank in scope.get("ranks") or []:
+            if not isinstance(rank, dict):
+                continue
+            key = str(rank.get("nameKey") or "").strip()
+            if not key:
+                continue
+            try:
+                value = float(rank.get("minReputation") or 0)
+            except (TypeError, ValueError):
+                value = 0.0
+            entry = (str(rank.get("name") or "").strip(), value)
+            index[key] = entry
+            index[key.lstrip("@")] = entry
+    return index
+
+
+def _reputation(contract: dict,
+                ranks: dict[str, tuple[str, float]]) -> tuple[str, str]:
+    """(faction, display text) for the contract's reputation gate."""
+    subs = contract.get("tokenSubstitutions") or {}
+    rank_key = str(subs.get("ReputationRank") or "").strip()
+    rank_name, rank_rep = ranks.get(rank_key) or ranks.get(
+        rank_key.lstrip("@")) or ("", 0.0)
+
+    faction = ""
+    for lock in contract.get("reputationLockout") or []:
+        if isinstance(lock, dict):
+            faction = str(lock.get("factionName") or "").strip()
+            if faction:
+                break
+    if not faction:
+        faction = str(contract.get("contractorName") or "").strip()
+
+    if not rank_name:
+        # No explicit rank: fall back to the minimum standing in the lockout.
+        for lock in contract.get("reputationLockout") or []:
+            if not isinstance(lock, dict):
+                continue
+            standing = lock.get("minStanding") or {}
+            name = str(standing.get("name") or "").strip()
+            if name:
+                rank_name = name
+                try:
+                    rank_rep = float(standing.get("minReputation") or 0)
+                except (TypeError, ValueError):
+                    rank_rep = 0.0
+                break
+
+    text = f"{faction} {rank_name}".strip() if faction or rank_name else ""
+    if text and rank_rep:
+        text = f"{text} ({int(rank_rep)} rep)"
+    return faction, text
 
 
 def build(data: dict) -> dict[str, dict]:
     """{set name: {source, requires, blueprints[]}} from a merged SCMDB dump."""
     pools = data.get("blueprintPools") or {}
     contracts = data.get("contracts") or []
+    ranks = _rank_index(data)
     sets: dict[str, dict] = {}
 
     for contract in contracts:
@@ -74,12 +115,18 @@ def build(data: dict) -> dict[str, dict]:
         title = str(contract.get("title") or contract.get("debugName")
                     or "Contract").strip()
         contractor = str(contract.get("contractorName") or "").strip()
+        faction, requires = _reputation(contract, ranks)
+
+        # Keep rank variants apart: the same title at a different standing
+        # awards a different pool, so merging them would blur the progress.
+        rank_hint = requires.replace(f"{faction} ", "", 1) if faction else requires
         key = f"{contractor}: {title}" if contractor else title
+        if rank_hint:
+            key = f"{key} · {rank_hint}"
 
         bits = [str(contract.get("missionType") or "").strip(), contractor,
                 str(contract.get("debugName") or "").strip()]
         source = "  ·  ".join(bit for bit in bits if bit)
-        requires = _reputation(contract)
 
         entry = sets.setdefault(key, {"source": source,
                                       "requires": requires,
