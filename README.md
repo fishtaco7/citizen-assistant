@@ -629,20 +629,25 @@ generated recipes, so it also covers blueprints you do not own yet.
 
 ### Generating the data
 
-SCMDB publishes a merged game dump and a crafting dump per patch:
+A snapshot of both files ships in `app/data/`, so a fresh install already has
+blueprints, missions, reputation gates and recipes. The importer regenerates it
+for a new patch:
 
 ```bash
 python -m tools.scmdb_import ~/Documents/projects/scmdb/merged.json \
-  --recipes ~/Documents/projects/scmdb/blueprints.json
+  --recipes ~/Documents/projects/scmdb/blueprints.json \
+  --out app/data/blueprint_sets.json
 ```
 
-That writes `blueprint_sets.json` and `blueprint_crafting.json` into
-`%APPDATA%\Citizen Assistant\`. The importer prints how many sets, assignments,
-recipes and unmatched recipes it produced. Re-run it after a patch.
+That writes `app/data/blueprint_sets.json` and, beside it,
+`app/data/blueprint_crafting.json`. Commit both, and every install picks them up
+on the next update.
 
-The data belongs to SCMDB and, underneath, to CIG's game files. It is generated
-locally rather than committed, which keeps the repository free of redistributed
-game data and always current for the build you play.
+Files in `%APPDATA%\Citizen Assistant\` win over the bundled ones, so a locally
+generated set can be used without touching the install.
+
+The data derives from SCMDB (https://scmdb.net) and, underneath, CIG's game
+files; the note field in each file records the source and patch.
 
 ### Importing unlocks from older logs
 
