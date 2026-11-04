@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QGuiApplication, QPalette, QPen
-from PySide6.QtWidgets import (QAbstractSpinBox, QComboBox, QFrame,
-                               QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                               QScrollArea, QSlider, QSpinBox, QStackedWidget,
-                               QVBoxLayout, QWidget)
+from PySide6.QtGui import (QColor, QFont, QGuiApplication, QIntValidator,
+                           QPalette, QPen)
+from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel,
+                               QLineEdit, QPushButton, QScrollArea, QSlider,
+                               QStackedWidget, QVBoxLayout, QWidget)
 
 from . import theme
 from .. import blueprint_calc
@@ -118,7 +118,7 @@ class BlueprintsPanel(QWidget):
         self._drag_from = None
         self._detail_name = ""
         self._detail_materials: list[dict] = []
-        self._detail_spins: list[QSpinBox] = []
+        self._detail_qualities: list[QLineEdit] = []
         self._detail_values: list[QLabel] = []
         self._tiers: list[dict] = []
         self._tier_index = 0
@@ -434,7 +434,7 @@ class BlueprintsPanel(QWidget):
     def _show_detail(self, name: str) -> None:
         self._detail_name = name
         self._detail_materials = []
-        self._detail_spins = []
+        self._detail_qualities = []
         self._detail_values = []
         self._clear_result_rows()
         self._clear_parts()
@@ -520,7 +520,7 @@ class BlueprintsPanel(QWidget):
         materials = [dict(material)
                      for material in (tier.get("materials") or [])]
         self._detail_materials = materials
-        self._detail_spins = []
+        self._detail_qualities = []
         self._detail_values = []
         self._clear_parts()
         self._clear_result_rows()
@@ -640,26 +640,44 @@ class BlueprintsPanel(QWidget):
         """))
         quality.addWidget(slider, 1)
 
-        spin = QSpinBox()
-        spin.setRange(floor, 1000)
-        spin.setSingleStep(5)
-        spin.setValue(start)
-        spin.setFixedWidth(theme.px(56))
-        spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        spin.setFont(theme.font(8))
-        spin.setStyleSheet(theme.qss("""
-            QSpinBox { color: #e8f0f8; background: rgba(255,255,255,0.05);
-                       border: 1px solid rgba(255,255,255,0.14);
-                       border-radius: 5px; padding: 1px 3px; }
+        box = QLineEdit(str(start))
+        box.setValidator(QIntValidator(floor, 1000, box))
+        box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        box.setFixedWidth(theme.px(58))
+        box.setFont(theme.font(8, QFont.Weight.DemiBold))
+        box.setStyleSheet(theme.qss("""
+            QLineEdit { color: #e8f0f8; background: rgba(255,255,255,0.06);
+                        border: 1px solid rgba(255,255,255,0.16);
+                        border-radius: 5px; padding: 1px 2px; }
+            QLineEdit:focus { border-color: rgba(79,209,224,0.7);
+                              background: rgba(79,209,224,0.08); }
         """))
-        quality.addWidget(spin)
+        quality.addWidget(box)
         layout.addLayout(quality)
+        self._detail_qualities.append(box)
 
-        slider.valueChanged.connect(spin.setValue)
-        spin.valueChanged.connect(slider.setValue)
-        spin.valueChanged.connect(self._recalculate)
-        self._detail_spins.append(spin)
+        # Slider and box are two views of one value: dragging writes the number,
+        # typing (or Enter) moves the handle.
+        def from_slider(value: int) -> None:
+            if box.text() != str(value):
+                box.setText(str(value))
+            self._recalculate()
+
+        def from_box() -> None:
+            try:
+                value = int(box.text().strip())
+            except ValueError:
+                box.setText(str(slider.value()))
+                return
+            value = max(floor, min(1000, value))
+            if box.text() != str(value):
+                box.setText(str(value))
+            if slider.value() != value:
+                slider.setValue(value)
+            self._recalculate()
+
+        slider.valueChanged.connect(from_slider)
+        box.editingFinished.connect(from_box)
 
         if picker is not None:
             def apply(index: int) -> None:
@@ -670,9 +688,12 @@ class BlueprintsPanel(QWidget):
                 material["minQuality"] = floor_value
                 amount.setText(f"{material['quantity']:g} SCU")
                 slider.setRange(floor_value, 1000)
-                spin.setRange(floor_value, 1000)
-                if spin.value() < floor_value:
-                    spin.setValue(floor_value)
+                box.setValidator(QIntValidator(floor_value, 1000, box))
+                current = max(floor_value, slider.value())
+                if slider.value() != current:
+                    slider.setValue(current)
+                if box.text() != str(current):
+                    box.setText(str(current))
                 self._recalculate()
 
             picker.currentIndexChanged.connect(apply)
@@ -691,6 +712,13 @@ class BlueprintsPanel(QWidget):
         return card
 
     @staticmethod
+    def _quality(box: QLineEdit) -> int:
+        try:
+            return max(0, min(1000, int(box.text().strip())))
+        except ValueError:
+            return 500
+
+    @staticmethod
     def _format(stats: dict) -> str:
         parts = []
         for entry in sorted(stats.values(), key=lambda item: item["name"]):
@@ -703,7 +731,7 @@ class BlueprintsPanel(QWidget):
     def _recalculate(self) -> None:
         if not self._detail_materials:
             return
-        qualities = [spin.value() for spin in self._detail_spins]
+        qualities = [self._quality(edit) for edit in self._detail_qualities]
 
         # Per-part effect, so each slot explains itself the way the crafting
         # sites show it.
