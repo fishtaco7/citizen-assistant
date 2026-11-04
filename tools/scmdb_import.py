@@ -217,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=None,
                         help="destination (default: the app config folder)")
     parser.add_argument("--recipes", type=Path, default=None,
-                        help="craftiong_blueprints-<version>.json, adds materials")
+                        help="crafting_blueprints-<version>.json, adds materials")
     args = parser.parse_args(argv)
 
     with open(args.merged, "r", encoding="utf-8") as handle:
