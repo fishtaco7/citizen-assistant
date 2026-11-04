@@ -605,6 +605,16 @@ case-insensitively with whitespace ignored. Without a mapping the card falls
 back to `47 unlocked in total · 3 this session`, so the feature works before any
 data exists.
 
+SCMDB publishes a merged game dump per patch; `tools/scmdb_import.py` turns its
+contract rewards into this file:
+
+```bash
+python -m tools.scmdb_import ~/Documents/projects/scmdb/merged.json
+```
+
+It prints `N sets, M blueprint assignments` and writes
+`%APPDATA%\Citizen Assistant\blueprint_sets.json`. Re-run it after a patch.
+
 ### BLUEPRINTS tab
 
 `BLUEPRINTS` sits between `COMBAT` and `NOTES` and currently shows a **coming
