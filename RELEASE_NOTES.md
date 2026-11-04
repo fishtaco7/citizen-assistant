@@ -14,7 +14,9 @@ log tracker, and a blueprint browser with a crafting calculator.
   across parts, and power pips stay whole numbers.
 - **Tier** buttons and material pickers appear when a blueprint has them.
 - The header tells you how to earn it: mission, faction, rank and reputation,
-  and the outposts or stations where the mission is offered.
+  and the outposts or stations where the mission is offered. A blueprint can sit
+  in several pools — the S71 Rifle is in five — so the easiest route is shown
+  first and the others follow under **ALSO**.
 
 ## Data
 
