@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QPalette, QPen
-from PySide6.QtWidgets import (QAbstractSpinBox, QFrame, QHBoxLayout, QLabel,
-                               QLineEdit, QPushButton, QScrollArea, QSlider,
-                               QSpinBox, QStackedWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractSpinBox, QComboBox, QFrame,
+                               QHBoxLayout, QLabel, QLineEdit, QPushButton,
+                               QScrollArea, QSlider, QSpinBox, QStackedWidget,
+                               QVBoxLayout, QWidget)
 
 from . import theme
 from .. import blueprint_calc
@@ -119,6 +120,9 @@ class BlueprintsPanel(QWidget):
         self._detail_materials: list[dict] = []
         self._detail_spins: list[QSpinBox] = []
         self._detail_values: list[QLabel] = []
+        self._tiers: list[dict] = []
+        self._tier_index = 0
+        self._tier_buttons: list[QPushButton] = []
 
         self._build()
         self._rebuild()
@@ -244,6 +248,14 @@ class BlueprintsPanel(QWidget):
         self.detail_where.setStyleSheet(theme.qss(
             "color: rgba(130,148,166,0.95); background: transparent;"))
         layout.addWidget(self.detail_where)
+
+        self.tier_bar = QWidget()
+        self.tier_bar.setStyleSheet(theme.qss("background: transparent;"))
+        self.tier_layout = QHBoxLayout(self.tier_bar)
+        self.tier_layout.setContentsMargins(0, theme.px(1), 0, theme.px(1))
+        self.tier_layout.setSpacing(theme.px(4))
+        self.tier_bar.hide()
+        layout.addWidget(self.tier_bar)
 
         self.material_scroll = _scroll_area()
         self.material_host = QWidget()
@@ -425,11 +437,7 @@ class BlueprintsPanel(QWidget):
         self._detail_spins = []
         self._detail_values = []
         self._clear_result_rows()
-        while self.material_layout.count() > 1:
-            item = self.material_layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
+        self._clear_parts()
 
         self.title.setText("BLUEPRINT")
         self.detail_title.setText(name)
@@ -441,23 +449,91 @@ class BlueprintsPanel(QWidget):
                                              records.get(_key(name))))
 
         entry = self._crafting.get(name)
-        tiers = (entry or {}).get("tiers") or []
-        materials = (tiers[0].get("materials") if tiers else []) or []
-        if not materials:
+        self._tiers = (entry or {}).get("tiers") or []
+        self._tier_index = 0
+        self._build_tier_bar()
+
+        if not self._tiers or not any(
+                tier.get("materials") for tier in self._tiers):
             self._clear_result_rows()
             self.table_host.hide()
             self.result_label.setText("No recipe data for this blueprint.")
             self.stack.setCurrentIndex(1)
             return
 
-        self.table_host.show()
+        self.stack.setCurrentIndex(1)
+        self._select_tier(0)
+
+    def _clear_parts(self) -> None:
+        while self.material_layout.count() > 1:
+            item = self.material_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+    def _build_tier_bar(self) -> None:
+        while self.tier_layout.count():
+            item = self.tier_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        self._tier_buttons = []
+        self.tier_bar.setVisible(len(self._tiers) > 1)
+        if len(self._tiers) <= 1:
+            return
+
+        for index in range(len(self._tiers)):
+            button = QPushButton(f"TIER {index + 1}")
+            button.setCheckable(True)
+            button.setChecked(index == 0)
+            button.setCursor(Qt.CursorShape.PointingHandCursor)
+            button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            button.setFixedHeight(theme.px(20))
+            button.setStyleSheet(theme.qss("""
+                QPushButton {
+                    color: rgba(168,184,200,0.9); background: transparent;
+                    border: 1px solid rgba(255,255,255,0.14);
+                    border-radius: 5px; padding: 1px 10px;
+                    font-size: 8px; font-weight: 600;
+                }
+                QPushButton:hover { color: #e6f7fa; }
+                QPushButton:checked {
+                    color: #061017; background: rgba(79,209,224,0.85);
+                    border-color: rgba(79,209,224,0.9);
+                }
+            """))
+            button.clicked.connect(
+                lambda _checked=False, target=index: self._select_tier(target))
+            self.tier_layout.addWidget(button)
+            self._tier_buttons.append(button)
+        self.tier_layout.addStretch(1)
+
+    def _select_tier(self, index: int) -> None:
+        if not (0 <= index < len(self._tiers)):
+            return
+        self._tier_index = index
+        for position, button in enumerate(self._tier_buttons):
+            button.setChecked(position == index)
+
+        tier = self._tiers[index]
+        # Copies, so switching materials does not rewrite the loaded data.
+        materials = [dict(material)
+                     for material in (tier.get("materials") or [])]
         self._detail_materials = materials
+        self._detail_spins = []
+        self._detail_values = []
+        self._clear_parts()
+        self._clear_result_rows()
+        if not materials:
+            self.table_host.hide()
+            self.result_label.setText("No recipe data for this tier.")
+            return
         for material in materials:
             self.material_layout.insertWidget(
                 self.material_layout.count() - 1,
                 self._material_row(material))
 
-        self.stack.setCurrentIndex(1)
+        self.table_host.show()
         self._recalculate()
 
     def _material_row(self, material: dict) -> QWidget:
@@ -485,11 +561,43 @@ class BlueprintsPanel(QWidget):
         line = QHBoxLayout()
         line.setContentsMargins(0, 0, 0, 0)
         line.setSpacing(theme.px(6))
-        name = QLabel(str(material.get("name") or ""))
-        name.setFont(theme.font(9, QFont.Weight.DemiBold))
-        name.setStyleSheet(theme.qss(
-            "color: #e8f0f8; background: transparent;"))
-        line.addWidget(name, 1)
+
+        options = [option for option in (material.get("options") or [])
+                   if isinstance(option, dict)]
+        if not options:
+            options = [{"name": material.get("name"),
+                        "quantity": material.get("quantity"),
+                        "minQuality": material.get("minQuality")}]
+
+        picker = None
+        if len(options) > 1:
+            picker = QComboBox()
+            picker.setFont(theme.font(9, QFont.Weight.DemiBold))
+            picker.setFixedHeight(theme.px(21))
+            picker.setCursor(Qt.CursorShape.PointingHandCursor)
+            picker.setStyleSheet(theme.qss("""
+                QComboBox {
+                    color: #e8f0f8; background: rgba(255,255,255,0.05);
+                    border: 1px solid rgba(255,255,255,0.14);
+                    border-radius: 4px; padding: 0px 6px;
+                }
+                QComboBox::drop-down { border: none; width: 14px; }
+                QComboBox QAbstractItemView {
+                    color: #e8f0f8; background: #0b1118;
+                    border: 1px solid rgba(255,255,255,0.12);
+                    selection-background-color: rgba(79,209,224,0.25);
+                }
+            """))
+            for option in options:
+                picker.addItem(str(option.get("name") or "—"))
+            line.addWidget(picker, 1)
+        else:
+            name = QLabel(str(material.get("name") or ""))
+            name.setFont(theme.font(9, QFont.Weight.DemiBold))
+            name.setStyleSheet(theme.qss(
+                "color: #e8f0f8; background: transparent;"))
+            line.addWidget(name, 1)
+
         amount = QLabel(f"{quantity:g} SCU")
         amount.setFont(theme.font(7))
         amount.setStyleSheet(theme.qss(
@@ -550,6 +658,22 @@ class BlueprintsPanel(QWidget):
         spin.valueChanged.connect(slider.setValue)
         spin.valueChanged.connect(self._recalculate)
         self._detail_spins.append(spin)
+
+        if picker is not None:
+            def apply(index: int) -> None:
+                option = options[index]
+                material["name"] = str(option.get("name") or "")
+                material["quantity"] = float(option.get("quantity") or 0)
+                floor_value = int(option.get("minQuality") or 0)
+                material["minQuality"] = floor_value
+                amount.setText(f"{material['quantity']:g} SCU")
+                slider.setRange(floor_value, 1000)
+                spin.setRange(floor_value, 1000)
+                if spin.value() < floor_value:
+                    spin.setValue(floor_value)
+                self._recalculate()
+
+            picker.currentIndexChanged.connect(apply)
 
         effect = QLabel("")
         effect.setFont(theme.font(7, QFont.Weight.DemiBold))

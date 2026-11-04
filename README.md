@@ -639,6 +639,10 @@ Each part is a card: drag the slider or type an exact number, and the part's own
 effect plus the table below update as you go. `minQuality` from the recipe is the
 slider's floor, so a material that cannot meet the slot cannot be selected.
 
+Blueprints with more than one tier get `TIER 1` … buttons above the parts. When
+a slot accepts alternative materials, its name becomes a dropdown — changing it
+updates the quantity, the slider's floor and the weighted craft quality.
+
 The maths follows the game's own curves: each modifier interpolates between its
 two quality points, and when a property is described by several segments
 (0–500, then 501–1000) only the segment covering that quality applies. Factors

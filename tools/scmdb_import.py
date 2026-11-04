@@ -139,10 +139,22 @@ def build_crafting(recipes: dict,
                 continue
             materials: list[dict] = []
             for slot in tier.get("slots") or []:
-                options = (slot or {}).get("options") or []
-                if not options:
+                parsed: list[dict] = []
+                for option in (slot or {}).get("options") or []:
+                    if not isinstance(option, dict):
+                        continue
+                    name = str(option.get("resourceName")
+                               or option.get("itemName") or "").strip()
+                    if not name:
+                        continue
+                    parsed.append({
+                        "type": str(option.get("type") or "").strip(),
+                        "name": name,
+                        "quantity": _number(option.get("quantity")),
+                        "minQuality": _number(option.get("minQuality")),
+                    })
+                if not parsed:
                     continue
-                option = options[0] or {}
                 modifiers = []
                 for modifier in slot.get("modifiers") or []:
                     if not isinstance(modifier, dict):
@@ -159,13 +171,16 @@ def build_crafting(recipes: dict,
                         "atEnd": _number_or(modifier.get("modifierAtEnd"), 1.0),
                         "additive": bool(modifier.get("additive")),
                     })
+                # Keep the first option at the top level so older readers and the
+                # list summary keep working, and the full set for the picker.
+                first = parsed[0]
                 materials.append({
                     "slot": str(slot.get("name") or "").strip(),
-                    "type": str(option.get("type") or "").strip(),
-                    "name": str(option.get("resourceName")
-                                or option.get("itemName") or "").strip(),
-                    "quantity": _number(option.get("quantity")),
-                    "minQuality": _number(option.get("minQuality")),
+                    "type": first["type"],
+                    "name": first["name"],
+                    "quantity": first["quantity"],
+                    "minQuality": first["minQuality"],
+                    "options": parsed,
                     "modifiers": modifiers,
                 })
             tiers.append({
