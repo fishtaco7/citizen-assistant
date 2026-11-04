@@ -636,7 +636,8 @@ CRAFT QUALITY  787
 ```
 
 Each part is a card: drag the slider or type an exact number, and the part's own
-effect plus the table below update as you go. `minQuality` from the recipe is the
+effect plus the table below update as you go. Sliders start at **stock quality
+500** (or the recipe's floor, if that is higher), and `minQuality` is the
 slider's floor, so a material that cannot meet the slot cannot be selected.
 
 Blueprints with more than one tier get `TIER 1` … buttons above the parts. When

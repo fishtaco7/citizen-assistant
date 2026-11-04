@@ -616,11 +616,13 @@ class BlueprintsPanel(QWidget):
         quality.addWidget(caption)
 
         floor = int(material.get("minQuality") or 0)
+        # Stock quality is 500 in game; a slot that demands better starts there.
+        start = max(floor, 500)
         slider = QSlider(Qt.Orientation.Horizontal)
         slider.setRange(floor, 1000)
         slider.setSingleStep(1)
         slider.setPageStep(25)
-        slider.setValue(1000)
+        slider.setValue(start)
         slider.setFixedHeight(theme.px(16))
         slider.setStyleSheet(theme.qss("""
             QSlider { background: transparent; }
@@ -641,7 +643,7 @@ class BlueprintsPanel(QWidget):
         spin = QSpinBox()
         spin.setRange(floor, 1000)
         spin.setSingleStep(5)
-        spin.setValue(1000)
+        spin.setValue(start)
         spin.setFixedWidth(theme.px(56))
         spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
         spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
