@@ -156,12 +156,32 @@ def _reference(crafting: dict) -> bool:
     return ok
 
 
+def _coverage(crafting: dict, sets_path: Path) -> None:
+    """How many recipes no mission pool awards (unreleased variants)."""
+    try:
+        raw = json.loads(sets_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+    known: set[str] = set()
+    for entry in (raw.get("sets") or {}).values():
+        members = entry.get("blueprints") if isinstance(entry, dict) else entry
+        for name in members or []:
+            known.add(str(name).strip().casefold())
+    unsourced = [name for name in crafting
+                 if name.strip().casefold() not in known]
+    print(f"\nAvailability: {len(crafting) - len(unsourced):,} recipes are "
+          f"awarded by a mission pool, {len(unsourced):,} are not")
+    for name in sorted(unsourced)[:8]:
+        print(f"  no source: {name}")
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     path = Path(argv[0]) if argv else DEFAULT
     crafting = _load(path)
     problems, notes, modes = _audit(crafting)
     _report(modes, problems, notes)
+    _coverage(crafting, path.with_name("blueprint_sets.json"))
 
     print("\nRepresentative blueprints (stock 500, then perfect 1000)")
     seen: set[str] = set()

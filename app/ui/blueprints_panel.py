@@ -395,10 +395,18 @@ class BlueprintsPanel(QWidget):
         for info in self._sets.catalogue():
             for blueprint in info.blueprints:
                 names.setdefault(_key(blueprint), blueprint.strip())
-        for blueprint in self._crafting.names():
-            names.setdefault(_key(blueprint), blueprint.strip())
         for key, record in records.items():
             names.setdefault(key, record.item_name.strip())
+
+        # The recipe dump also carries variants that exist in the game files but
+        # no mission awards yet (P6-LR "Archangel" and friends). Listing them
+        # would promise blueprints nobody can earn, so they stay hidden until
+        # they turn up in a pool or in the registry.
+        unsourced = 0
+        for blueprint in self._crafting.names():
+            key = _key(blueprint)
+            if key not in names:
+                unsourced += 1
 
         needle = self._query.strip().casefold()
         shown = 0
@@ -417,8 +425,9 @@ class BlueprintsPanel(QWidget):
 
         total = len(names)
         self.status.setText(f"{len(records)} / {total} KNOWN")
+        extra = f" · {unsourced} with no source hidden" if unsourced else ""
         self.footer.setText(
-            f"{len(records)} of {total} unlocked · {shown} shown")
+            f"{len(records)} of {total} unlocked · {shown} shown{extra}")
 
     def _clear_unlock_rows(self) -> None:
         while self.unlock_layout.count():
@@ -488,10 +497,12 @@ class BlueprintsPanel(QWidget):
             rows.append(("Required", required))
 
         if info is not None:
-            where = " · ".join(part for part in (info.location, info.system)
-                               if part)
-            if where:
-                rows.append(("Location", where))
+            parts: list[str] = []
+            for part in (info.location, info.system):
+                if part and part not in parts:
+                    parts.append(part)
+            if parts:
+                rows.append(("Location", " · ".join(parts)))
 
         for label, value in rows:
             self.unlock_layout.addWidget(self._info_row(label, value))
@@ -810,52 +821,20 @@ class BlueprintsPanel(QWidget):
                 parts.append(f"{entry['name']} {entry['percent']:+.2f}%")
         return "  ·  ".join(parts)
 
-    @staticmethod
-    def _delta(current: dict, previous: dict) -> dict:
-        """The change one part made, applied after the parts before it.
-
-        With two 0.8 recoil modifiers the first removes 20 points and the second
-        removes 16 of what the first left; those add up to the -36% total. A
-        ratio would wrongly report 20% twice.
-        """
-        result: dict[str, dict] = {}
-        for key, entry in current.items():
-            old = previous.get(key) or {}
-            if entry.get("percent") is None:
-                change = ((entry.get("delta") or 0.0)
-                          - (old.get("delta") or 0.0))
-                if abs(change) < 1e-9:
-                    continue
-                result[key] = {"name": entry["name"], "percent": None,
-                               "delta": change}
-            else:
-                change = (entry["percent"] - (old.get("percent") or 0.0))
-                if abs(change) < 1e-9:
-                    continue
-                result[key] = {"name": entry["name"], "percent": change,
-                               "delta": None}
-        return result
-
     def _recalculate(self) -> None:
         if not self._detail_materials:
             return
         qualities = [self._quality(edit) for edit in self._detail_qualities]
         stats = blueprint_calc.changes(self._detail_materials, qualities)
 
-        # Per-part effect, accumulated in recipe order so the cards add up to
-        # the total below them.
-        running_materials: list[dict] = []
-        running_qualities: list[int] = []
-        previous: dict = {}
+        # Each card shows what its material does on its own, the way the
+        # crafting sites present it. The table below is the combined result.
         for index, label in enumerate(self._detail_values):
             if index >= len(self._detail_materials):
                 break
-            running_materials.append(self._detail_materials[index])
-            running_qualities.append(qualities[index])
-            current = blueprint_calc.changes(running_materials,
-                                             running_qualities)
-            text = self._format(self._delta(current, previous))
-            previous = current
+            single = blueprint_calc.changes([self._detail_materials[index]],
+                                            [qualities[index]])
+            text = self._format(single)
             label.setText(text)
             label.setToolTip(text)
             label.setVisible(bool(text))

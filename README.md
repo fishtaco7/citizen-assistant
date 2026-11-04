@@ -654,14 +654,18 @@ and where it runs — the outpost from the contract's prerequisites plus the sys
 it is offered in. Bundled data that predates these fields still shows the
 mission and the reputation line.
 
+The recipe dump also contains variants that exist in the game files but that no
+mission awards yet. They are hidden rather than listed as unearnable; the footer
+reports how many were left out, and the audit lists examples.
+
 The maths follows the game's own curves: each modifier interpolates between its
 two quality points, and when a property is described by several segments
 (0–500, then 501–1000) only the segment covering that quality applies. Modifiers
 are multipliers, so they **multiply across ingredients** — two parts at −20%
-leave 0.8 × 0.8 = 0.64, not 0.6 — and each part's card shows its real marginal
-share of the result. Properties the data flags `additive` (power pips) are the
-exception and are summed as whole numbers. Craft quality is a quantity-weighted
-average of the input qualities.
+leave 0.8 × 0.8 = 0.64, not 0.6. Each part's card shows what that material does
+on its own; the table below is the combined result. Properties the data flags
+`additive` (power pips) are the exception and are summed as whole numbers. Craft
+quality is a quantity-weighted average of the input qualities.
 
 Nothing is specialised per category — the calculator reads whatever properties
 a recipe carries, so every craftable type behaves the same way:
