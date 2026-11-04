@@ -169,8 +169,9 @@ def build_crafting(recipes: dict,
                    ) -> tuple[dict, int, int]:
     """blueprint name -> tiers/materials.
 
-    Returns (crafting, unmatched, unreleased). When ``available`` is given, any
-    name outside it is a variant no pool awards and is skipped.
+    Returns (crafting, unmatched, unreleased). ``available`` marks each recipe
+    with ``awarded``; recipes outside it are still kept so the data stays
+    complete, and the app hides them.
     """
     crafting: dict[str, dict] = {}
     unmatched = 0
@@ -185,9 +186,9 @@ def build_crafting(recipes: dict,
         if not name:
             unmatched += 1
             continue
-        if available is not None and name.casefold() not in available:
+        awarded = available is None or name.casefold() in available
+        if not awarded:
             unreleased += 1
-            continue
 
         tiers: list[dict] = []
         for tier in blueprint.get("tiers") or []:
@@ -251,6 +252,7 @@ def build_crafting(recipes: dict,
         if tiers:
             crafting[name] = {
                 "tag": str(blueprint.get("tag") or "").strip(),
+                "awarded": awarded,
                 "tiers": tiers,
             }
 
@@ -389,7 +391,7 @@ def main(argv: list[str] | None = None) -> int:
             "crafting": crafting,
         }, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"{len(crafting)} recipes from {len(source)} blueprints "
-              f"({unmatched} unnamed, {unreleased} not awarded by any pool) "
+              f"({unmatched} unnamed, {unreleased} unreleased but kept) "
               f"-> {craft_out}")
 
     return 0

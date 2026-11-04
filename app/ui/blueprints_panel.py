@@ -395,18 +395,18 @@ class BlueprintsPanel(QWidget):
         for info in self._sets.catalogue():
             for blueprint in info.blueprints:
                 names.setdefault(_key(blueprint), blueprint.strip())
+        for blueprint in self._crafting.names():
+            if self._crafting.awarded(blueprint):
+                names.setdefault(_key(blueprint), blueprint.strip())
         for key, record in records.items():
             names.setdefault(key, record.item_name.strip())
 
-        # The recipe dump also carries variants that exist in the game files but
-        # no mission awards yet (P6-LR "Archangel" and friends). Listing them
-        # would promise blueprints nobody can earn, so they stay hidden until
-        # they turn up in a pool or in the registry.
-        unsourced = 0
-        for blueprint in self._crafting.names():
-            key = _key(blueprint)
-            if key not in names:
-                unsourced += 1
+        # The recipe dump also carries definitions that exist in the game files
+        # but that no pool awards yet (P6-LR "Archangel" and friends). They stay
+        # hidden unless the registry already has them, so the list never
+        # promises a blueprint nobody can earn.
+        unreleased = sum(1 for blueprint in self._crafting.names()
+                         if _key(blueprint) not in names)
 
         needle = self._query.strip().casefold()
         shown = 0
@@ -425,7 +425,7 @@ class BlueprintsPanel(QWidget):
 
         total = len(names)
         self.status.setText(f"{len(records)} / {total} KNOWN")
-        extra = f" · {unsourced} with no source hidden" if unsourced else ""
+        extra = f" · {unreleased} unreleased hidden" if unreleased else ""
         self.footer.setText(
             f"{len(records)} of {total} unlocked · {shown} shown{extra}")
 

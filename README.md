@@ -667,9 +667,10 @@ you have most progress in, then the lowest reputation gate, and the rest are
 listed under **ALSO**. Bundled data that predates these fields falls back to the
 mission and reputation line.
 
-The recipe dump also contains variants that exist in the game files but that no
-mission awards yet. They are hidden rather than listed as unearnable; the footer
-reports how many were left out, and the audit lists examples.
+The recipe dump also contains definitions that exist in the game files but that
+no mission awards yet. They are kept in the data and hidden from the list rather
+than shown as unearnable; the footer reports how many, and the audit lists
+examples.
 
 The maths follows the game's own curves: each modifier interpolates between its
 two quality points, and when a property is described by several segments

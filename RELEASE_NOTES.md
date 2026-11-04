@@ -21,9 +21,9 @@ log tracker, and a blueprint browser with a crafting calculator.
 ## Data
 
 - Generated from SCMDB game data, patch `4.10.2-live.12913470`.
-- Recipes for variants no pool awards are excluded, so everything listed can
-  actually be earned. Variants that are awarded, such as `Artimex Core Canuto`,
-  stay.
+- Recipes for variants no pool awards are kept in the data but hidden from the
+  list, so everything shown can actually be earned while nothing is thrown away.
+  Variants that are awarded, such as `Artimex Core Canuto`, stay.
 - `BASE` is blank because no public dataset carries base damage or armour; the
   calculator reports relative changes, not a predicted item card.
 

@@ -36,14 +36,16 @@ class BuildCraftingTests(unittest.TestCase):
         self.assertEqual(unmatched, 0)
         self.assertEqual(unreleased, 0)
 
-    def test_recipes_no_pool_awards_are_skipped(self):
+    def test_unreleased_recipes_are_kept_but_flagged(self):
         recipes = {"blueprints": [
             _blueprint("Test Widget", [_slot(_option("Iron"))]),
             _blueprint("Phantom Widget", [_slot(_option("Iron"))]),
         ]}
         crafting, _, unreleased = build_crafting(
             recipes, {}, {"test widget"})
-        self.assertEqual(list(crafting), ["Test Widget"])
+        self.assertEqual(set(crafting), {"Test Widget", "Phantom Widget"})
+        self.assertTrue(crafting["Test Widget"]["awarded"])
+        self.assertFalse(crafting["Phantom Widget"]["awarded"])
         self.assertEqual(unreleased, 1)
 
     def test_every_option_is_kept_when_there_is_a_choice(self):

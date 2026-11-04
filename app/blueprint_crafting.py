@@ -70,6 +70,14 @@ class CraftingData:
     def get(self, name: str) -> dict | None:
         return self._by_name.get(_key(name))
 
+    def awarded(self, name: str) -> bool:
+        """True when a blueprint pool can grant this recipe.
+
+        Older files predate the flag, so treat a missing value as awarded.
+        """
+        entry = self.get(name)
+        return bool(entry.get("awarded", True)) if entry else False
+
     def names(self) -> list[str]:
         return [str(entry.get("name"))
                 for entry in self._by_name.values() if entry.get("name")]

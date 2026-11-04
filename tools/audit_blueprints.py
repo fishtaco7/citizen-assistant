@@ -44,8 +44,12 @@ def main(argv: list[str] | None = None) -> int:
         if key not in recipes:
             missing_recipe.append((entries[0][0], key))
 
-    # -- recipes that no mission pool claims (should be empty after the filter)
-    unsourced = [name for key, name in recipes.items() if key not in claims]
+    # -- recipes with no contract: either unreleased, or pool-backed but unmapped
+    unreleased = [name for name, entry in crafting.items()
+                  if not entry.get("awarded", True)]
+    unmapped = [name for name, entry in crafting.items()
+                if entry.get("awarded", True)
+                and name.casefold() not in claims]
 
     # -- recipe structure
     empty_recipe = []
@@ -111,7 +115,9 @@ def main(argv: list[str] | None = None) -> int:
     _show("Materials with zero quantity", sorted(set(zero_quantity)))
 
     print("\nPool-backed recipes with no contract in the dump (expected)")
-    _show("Recipes with no mission mapping", unsourced)
+    _show("Awarded but no mission mapping", unmapped)
+    print("\nDefinitions with no distribution pool (hidden in the app)")
+    _show("Unreleased recipes", unreleased)
 
     print("\nUnlock details (missing but not fatal)")
     _show("Pools without a faction", no_faction)
