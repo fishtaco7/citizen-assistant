@@ -43,6 +43,16 @@ def _key(value: object) -> str:
     return str(value or "").strip().casefold()
 
 
+def _log(message: str) -> None:
+    """Diagnostics go next to error.log; never let logging break loading."""
+    try:
+        path = config_dir() / "error.log"
+        with open(path, "a", encoding="utf-8") as handle:
+            handle.write(f"[blueprint_sets] {message}\n")
+    except OSError:
+        pass
+
+
 @dataclass(frozen=True)
 class SetInfo:
     """One mission/pool: its name, its members and where it comes from."""
@@ -77,8 +87,12 @@ class BlueprintSets:
                 continue
             self.path = candidate
             self._read(candidate)
+            _log(f"{candidate} -> {len(self._set_of)} names, "
+                 f"{len(self._members)} sets"
+                 + (f", error={self.error}" if self.error else ""))
             return
         self.path = None
+        _log("no blueprint_sets.json found")
 
     def _read(self, path: Path) -> None:
         self._set_of.clear()
