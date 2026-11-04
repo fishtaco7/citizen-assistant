@@ -111,6 +111,12 @@ def _number(value):
         return None
 
 
+def _number_or(value, fallback):
+    """Like _number, but keeps a genuine 0 instead of treating it as missing."""
+    parsed = _number(value)
+    return fallback if parsed is None else parsed
+
+
 def build_crafting(recipes: dict,
                    names: dict[str, str]) -> tuple[dict, int]:
     """blueprint name -> tiers/materials, plus a count of unmatched recipes."""
@@ -147,10 +153,11 @@ def build_crafting(recipes: dict,
                     modifiers.append({
                         "property": key,
                         "name": str(modifier.get("propertyName") or "").strip(),
-                        "start": _number(modifier.get("startQuality")) or 0.0,
-                        "end": _number(modifier.get("endQuality")) or 1000.0,
-                        "atStart": _number(modifier.get("modifierAtStart")) or 1.0,
-                        "atEnd": _number(modifier.get("modifierAtEnd")) or 1.0,
+                        "start": _number_or(modifier.get("startQuality"), 0.0),
+                        "end": _number_or(modifier.get("endQuality"), 1000.0),
+                        "atStart": _number_or(modifier.get("modifierAtStart"), 1.0),
+                        "atEnd": _number_or(modifier.get("modifierAtEnd"), 1.0),
+                        "additive": bool(modifier.get("additive")),
                     })
                 materials.append({
                     "slot": str(slot.get("name") or "").strip(),

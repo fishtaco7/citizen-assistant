@@ -118,6 +118,7 @@ class BlueprintsPanel(QWidget):
         self._detail_name = ""
         self._detail_materials: list[dict] = []
         self._detail_spins: list[QDoubleSpinBox] = []
+        self._detail_values: list[QLabel] = []
 
         self._build()
         self._rebuild()
@@ -342,6 +343,7 @@ class BlueprintsPanel(QWidget):
         self._detail_name = name
         self._detail_materials = []
         self._detail_spins = []
+        self._detail_values = []
         while self.material_layout.count() > 1:
             item = self.material_layout.takeAt(0)
             widget = item.widget()
@@ -379,7 +381,7 @@ class BlueprintsPanel(QWidget):
         row.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         row.setStyleSheet(theme.qss(
             "background: rgba(255,255,255,0.03); border-radius: 6px;"))
-        row.setFixedHeight(theme.px(30))
+        row.setFixedHeight(theme.px(34))
         layout = QHBoxLayout(row)
         layout.setContentsMargins(theme.px(8), 0, theme.px(8), 0)
         layout.setSpacing(theme.px(6))
@@ -392,6 +394,17 @@ class BlueprintsPanel(QWidget):
             "color: rgba(200,212,226,0.95); background: transparent;"))
         label.setMinimumWidth(0)
         layout.addWidget(label, 1)
+
+        effect = QLabel("")
+        effect.setFont(theme.font(7, QFont.Weight.DemiBold))
+        effect.setAlignment(Qt.AlignmentFlag.AlignRight
+                            | Qt.AlignmentFlag.AlignVCenter)
+        effect.setMaximumWidth(theme.px(190))
+        effect.setStyleSheet(theme.qss(
+            f"color: rgba({AMBER.red()},{AMBER.green()},{AMBER.blue()},0.95);"
+            "background: transparent;"))
+        layout.addWidget(effect)
+        self._detail_values.append(effect)
 
         spin = QDoubleSpinBox()
         spin.setDecimals(0)
@@ -410,10 +423,31 @@ class BlueprintsPanel(QWidget):
         self._detail_spins.append(spin)
         return row
 
+    @staticmethod
+    def _format(stats: dict) -> str:
+        parts = []
+        for entry in sorted(stats.values(), key=lambda item: item["name"]):
+            if entry.get("percent") is None:
+                parts.append(f"{entry['name']} {entry.get('delta', 0):+.0f}")
+            else:
+                parts.append(f"{entry['name']} {entry['percent']:+.2f}%")
+        return "  ·  ".join(parts)
+
     def _recalculate(self) -> None:
         if not self._detail_materials:
             return
         qualities = [spin.value() for spin in self._detail_spins]
+
+        # Per-part effect, so each slot explains itself the way SCMDB shows it.
+        for index, label in enumerate(self._detail_values):
+            if index >= len(self._detail_materials):
+                break
+            single = blueprint_calc.changes([self._detail_materials[index]],
+                                            [qualities[index]])
+            text = self._format(single) or "no effect"
+            label.setText(text)
+            label.setToolTip(text)
+
         stats = blueprint_calc.changes(self._detail_materials, qualities)
         quality = blueprint_calc.average_quality(qualities,
                                                  self._detail_materials)
@@ -421,13 +455,8 @@ class BlueprintsPanel(QWidget):
             self.result_label.setText(
                 f"Craft quality {quality:,.0f} · no stat modifiers in the data")
             return
-
-        ordered = sorted(stats.values(),
-                         key=lambda entry: -abs(entry["percent"]))
-        lines = [f"{entry['name']}  {entry['percent']:+.1f}%"
-                 for entry in ordered]
         self.result_label.setText(
-            f"Craft quality {quality:,.0f}\n" + "   ".join(lines))
+            f"Craft quality {quality:,.0f}     {self._format(stats)}")
 
     # ------------------------------------------------------------------
     def showEvent(self, event):  # noqa: N802
