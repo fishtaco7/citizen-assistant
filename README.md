@@ -590,6 +590,7 @@ bundled `app/data/blueprint_sets.json` is only a template:
   "sets": {
     "Covalex Supply Run": {
       "source": "Covalex hauling missions, one blueprint per completion",
+      "requires": "Covalex Contractor (16000 rep)",
       "blueprints": ["Defiance Helmet Tactical", "Pembroke RSI"]
     }
   },

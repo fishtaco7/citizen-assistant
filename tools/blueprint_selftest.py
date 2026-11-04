@@ -448,7 +448,14 @@ def check_sets() -> None:
     with tempfile.TemporaryDirectory() as raw:
         path = Path(raw) / "sets.json"
         path.write_text(json.dumps({
-            "sets": {"Mission A": ["Alpha", "Beta", "Gamma"]},
+            "sets": {
+                "Mission A": ["Alpha", "Beta", "Gamma"],
+                "Mission C": {
+                    "source": "Where it drops",
+                    "requires": "Headhunters Sr. Contractor (5800 rep)",
+                    "blueprints": ["Epsilon"],
+                },
+            },
             "blueprints": {"Delta": "Mission B"},
         }), encoding="utf-8")
 
@@ -460,6 +467,10 @@ def check_sets() -> None:
         assert sets.progress("Mission A", ["Alpha", "GAMMA"]) == (2, 3)
         # A set known only from a single assignment has no known size.
         assert sets.progress("Mission B", ["Delta"]) == (0, 0)
+        # Object form keeps the free-text source and the reputation gate.
+        assert sets.progress("Mission C", ["Epsilon"]) == (1, 1)
+        assert sets.source_for("Mission C") == "Where it drops"
+        assert sets.requires_for("Mission C") == "Headhunters Sr. Contractor (5800 rep)"
 
         broken = Path(raw) / "broken.json"
         broken.write_text("{not json", encoding="utf-8")

@@ -50,6 +50,7 @@ class SetInfo:
     name: str
     blueprints: tuple[str, ...]
     source: str = ""
+    requires: str = ""
 
 
 class BlueprintSets:
@@ -61,6 +62,7 @@ class BlueprintSets:
         self._set_of: dict[str, str] = {}
         self._members: dict[str, list[str]] = {}
         self._source: dict[str, str] = {}
+        self._requires: dict[str, str] = {}
         self.load(path)
 
     # ------------------------------------------------------------------
@@ -82,6 +84,7 @@ class BlueprintSets:
         self._set_of.clear()
         self._members.clear()
         self._source.clear()
+        self._requires.clear()
         self.error = ""
         try:
             with open(path, "r", encoding="utf-8") as fh:
@@ -100,8 +103,10 @@ class BlueprintSets:
                 if not set_name:
                     continue
                 source = ""
+                requires = ""
                 if isinstance(value, Mapping):
                     source = str(value.get("source") or "").strip()
+                    requires = str(value.get("requires") or "").strip()
                     members = value.get("blueprints")
                 else:
                     members = value
@@ -110,6 +115,8 @@ class BlueprintSets:
                 self._members.setdefault(set_name, [])
                 if source:
                     self._source[set_name] = source
+                if requires:
+                    self._requires[set_name] = requires
                 for member in members:
                     text = str(member).strip()
                     if not text:
@@ -138,11 +145,15 @@ class BlueprintSets:
     def source_for(self, set_name: str) -> str:
         return self._source.get(set_name, "")
 
+    def requires_for(self, set_name: str) -> str:
+        return self._requires.get(set_name, "")
+
     def catalogue(self) -> list[SetInfo]:
         """Every known set, for the BLUEPRINTS tab."""
         return [SetInfo(name=name,
                         blueprints=tuple(members),
-                        source=self._source.get(name, ""))
+                        source=self._source.get(name, ""),
+                        requires=self._requires.get(name, ""))
                 for name, members in self._members.items()]
 
     def progress(self, set_name: str,

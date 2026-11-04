@@ -28,8 +28,28 @@ if str(ROOT) not in sys.path:
 from app.config import config_dir  # noqa: E402
 
 
+def _reputation(contract: dict) -> str:
+    """Faction and standing the contract requires, as display text."""
+    parts: list[str] = []
+    for lock in contract.get("reputationLockout") or []:
+        if not isinstance(lock, dict):
+            continue
+        faction = str(lock.get("factionName") or "").strip()
+        standing = lock.get("minStanding") or {}
+        rank = str(standing.get("name") or "").strip()
+        value = standing.get("minReputation")
+        bit = faction or "Faction"
+        if rank:
+            bit = f"{bit} {rank}"
+        if isinstance(value, (int, float)) and value:
+            bit = f"{bit} ({int(value)} rep)"
+        if bit and bit not in parts:
+            parts.append(bit)
+    return "  ·  ".join(parts)
+
+
 def build(data: dict) -> dict[str, dict]:
-    """{set name: {source, blueprints[]}} from a merged SCMDB dump."""
+    """{set name: {source, requires, blueprints[]}} from a merged SCMDB dump."""
     pools = data.get("blueprintPools") or {}
     contracts = data.get("contracts") or []
     sets: dict[str, dict] = {}
@@ -59,8 +79,13 @@ def build(data: dict) -> dict[str, dict]:
         bits = [str(contract.get("missionType") or "").strip(), contractor,
                 str(contract.get("debugName") or "").strip()]
         source = "  ·  ".join(bit for bit in bits if bit)
+        requires = _reputation(contract)
 
-        entry = sets.setdefault(key, {"source": source, "blueprints": []})
+        entry = sets.setdefault(key, {"source": source,
+                                      "requires": requires,
+                                      "blueprints": []})
+        if requires and not entry.get("requires"):
+            entry["requires"] = requires
         for name in names:
             if name not in entry["blueprints"]:
                 entry["blueprints"].append(name)
