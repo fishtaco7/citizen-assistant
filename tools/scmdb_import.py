@@ -137,6 +137,21 @@ def build_crafting(recipes: dict,
                 if not options:
                     continue
                 option = options[0] or {}
+                modifiers = []
+                for modifier in slot.get("modifiers") or []:
+                    if not isinstance(modifier, dict):
+                        continue
+                    key = str(modifier.get("propertyKey") or "").strip()
+                    if not key:
+                        continue
+                    modifiers.append({
+                        "property": key,
+                        "name": str(modifier.get("propertyName") or "").strip(),
+                        "start": _number(modifier.get("startQuality")) or 0.0,
+                        "end": _number(modifier.get("endQuality")) or 1000.0,
+                        "atStart": _number(modifier.get("modifierAtStart")) or 1.0,
+                        "atEnd": _number(modifier.get("modifierAtEnd")) or 1.0,
+                    })
                 materials.append({
                     "slot": str(slot.get("name") or "").strip(),
                     "type": str(option.get("type") or "").strip(),
@@ -144,6 +159,7 @@ def build_crafting(recipes: dict,
                                 or option.get("itemName") or "").strip(),
                     "quantity": _number(option.get("quantity")),
                     "minQuality": _number(option.get("minQuality")),
+                    "modifiers": modifiers,
                 })
             tiers.append({
                 "craftTime": tier.get("craftTimeSeconds"),

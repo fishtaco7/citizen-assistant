@@ -612,20 +612,33 @@ it into this file. Re-run the importer after a patch and the mapping is current.
 ### BLUEPRINTS tab
 
 `BLUEPRINTS` sits between `COMBAT` and `NOTES`. Type to filter by blueprint,
-mission, reputation or material. Each row shows:
+mission, reputation or material. Each row shows ownership, set progress with the
+reputation gate, and tier-1 materials. **Click a row** for the detail view:
 
 ```text
-Trawler Scraper Module                              HAVE
-2 of 5 · Headhunters: [DESTINATION] Salvage · Sr. Contractor (5800 rep)
-2 Titanium  ·  2 Riccite
+JS-500                                        HAVEN
+2 of 6 · Headhunters: [TARGET] … · Sr. Contractor (5800 rep)
+
+SUBSTRATE   2 Titanium      [1000]
+LATTICE     2 Riccite       [1000]
+COATING     4 Yormandi Eye  [1000]
+
+Craft quality 1,000
+Recoil Handling +4.6%   Recoil Smoothness +3.1%   Recoil Kick -2.0%
 ```
 
-- the first line is the blueprint and whether you own it
-- the second is progress through its mission set plus the reputation gate
-- the third is tier-1 materials, once the crafting file is generated
+Change a material's quality and the stats recompute live; `minQuality` from the
+recipe is the spin box's floor, so a material that cannot meet the slot is
+rejected rather than silently accepted.
 
-The list is built from your registry, the generated mission mapping and the
-generated recipes, so it also covers blueprints you do not own yet.
+The maths follows the game's own curves: each modifier interpolates between its
+two quality points, factors for one property multiply per ingredient, and across
+ingredients the default is additive while damage mitigation is stacked. Craft
+quality is a quantity-weighted average of the input qualities.
+
+Absolute damage/armour values are not in any public dataset, so the calculator
+reports **relative** changes. Numbers are meaningful as deltas, not as a
+predicted item card.
 
 ### Generating the data
 

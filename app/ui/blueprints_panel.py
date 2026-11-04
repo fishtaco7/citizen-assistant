@@ -1,37 +1,58 @@
-"""BLUEPRINTS: search what you own, where it drops and what it costs to craft."""
+"""BLUEPRINTS: search, then inspect a blueprint's source and crafting."""
 from __future__ import annotations
 
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QPalette, QPen
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit,
-                               QPushButton, QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QDoubleSpinBox, QFrame, QHBoxLayout, QLabel,
+                               QLineEdit, QPushButton, QScrollArea,
+                               QStackedWidget, QVBoxLayout, QWidget)
 
 from . import theme
+from .. import blueprint_calc
 from ..blueprint_crafting import CraftingData
 from ..blueprint_sets import BlueprintSets
 from ..blueprints import BlueprintTracker
 
-WIDTH = 520
-HEIGHT = 620
+WIDTH = 540
+HEIGHT = 640
 MAX_ROWS = 250
 
 GREEN = QColor(94, 214, 138)
 AMBER = QColor(255, 176, 32)
+MUTED = QColor(130, 148, 166)
 
 
 def _key(value: object) -> str:
     return str(value or "").strip().casefold()
 
 
+def _scroll_area() -> QScrollArea:
+    area = QScrollArea()
+    area.setWidgetResizable(True)
+    area.setFrameShape(QFrame.Shape.NoFrame)
+    area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    area.setStyleSheet(theme.qss(
+        "QScrollArea { background: transparent; border: none; }"
+        "QScrollBar:vertical { background: transparent; width: 6px; }"
+        "QScrollBar::handle:vertical { background: rgba(255,255,255,0.18);"
+        "border-radius: 3px; }"
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical"
+        "{ height: 0; }"))
+    return area
+
+
 class _Row(QWidget):
     def __init__(self, name: str, where: str, craft: str, owned: bool,
-                 parent=None):
+                 on_click, parent=None):
         super().__init__(parent)
+        self._on_click = on_click
+        self._name = name
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet(theme.qss(
             "background: rgba(255,255,255,0.03); border-radius: 7px;"))
         self.setFixedHeight(theme.px(64))
-        self.setToolTip(f"{name}\n{where}\n{craft}")
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip(f"{name}\n{where}\n{craft}\nClick for details")
 
         row = QHBoxLayout(self)
         row.setContentsMargins(theme.px(10), theme.px(5), theme.px(10), theme.px(5))
@@ -43,8 +64,7 @@ class _Row(QWidget):
 
         title = QLabel(name)
         title.setFont(theme.font(9, QFont.Weight.DemiBold))
-        title.setStyleSheet(theme.qss(
-            "color: #e8f0f8; background: transparent;"))
+        title.setStyleSheet(theme.qss("color: #e8f0f8; background: transparent;"))
         text.addWidget(title)
 
         where_label = QLabel(where)
@@ -72,6 +92,11 @@ class _Row(QWidget):
         for label in (title, where_label, craft_label):
             label.setMinimumWidth(0)
 
+    def mousePressEvent(self, event):  # noqa: N802
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._on_click(self._name)
+            event.accept()
+
 
 class BlueprintsPanel(QWidget):
     close_requested = Signal()
@@ -90,6 +115,9 @@ class BlueprintsPanel(QWidget):
         self._crafting = crafting
         self._query = ""
         self._drag_from = None
+        self._detail_name = ""
+        self._detail_materials: list[dict] = []
+        self._detail_spins: list[QDoubleSpinBox] = []
 
         self._build()
         self._rebuild()
@@ -102,9 +130,9 @@ class BlueprintsPanel(QWidget):
 
         head = QHBoxLayout()
         head.setSpacing(theme.px(8))
-        title = QLabel("BLUEPRINTS")
-        title.setFont(theme.font(9, QFont.Weight.Bold, spacing=1.8))
-        title.setStyleSheet(theme.qss(
+        self.title = QLabel("BLUEPRINTS")
+        self.title.setFont(theme.font(9, QFont.Weight.Bold, spacing=1.8))
+        self.title.setStyleSheet(theme.qss(
             "color: rgba(168,184,200,0.95); background: transparent;"))
 
         self.status = QLabel("—")
@@ -124,11 +152,22 @@ class BlueprintsPanel(QWidget):
         """))
         close.clicked.connect(self.close_requested.emit)
 
-        head.addWidget(title)
+        head.addWidget(self.title)
         head.addStretch(1)
         head.addWidget(self.status)
         head.addWidget(close)
         root.addLayout(head)
+
+        self.stack = QStackedWidget()
+        self.stack.addWidget(self._build_list_page())
+        self.stack.addWidget(self._build_detail_page())
+        root.addWidget(self.stack, 1)
+
+    def _build_list_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(theme.px(6))
 
         self.search = QLineEdit()
         self.search.setPlaceholderText("Search blueprints, missions or materials…")
@@ -152,21 +191,9 @@ class BlueprintsPanel(QWidget):
         palette.setColor(QPalette.ColorRole.PlaceholderText, QColor(120, 137, 155))
         self.search.setPalette(palette)
         self.search.textChanged.connect(self._on_query)
-        root.addWidget(self.search)
+        layout.addWidget(self.search)
 
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.scroll.setStyleSheet(theme.qss(
-            "QScrollArea { background: transparent; border: none; }"
-            "QScrollBar:vertical { background: transparent; width: 6px; }"
-            "QScrollBar::handle:vertical { background: rgba(255,255,255,0.18);"
-            "border-radius: 3px; }"
-            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical"
-            "{ height: 0; }"))
-
+        self.scroll = _scroll_area()
         self.host = QWidget()
         self.host.setStyleSheet(theme.qss("background: transparent;"))
         self.list_layout = QVBoxLayout(self.host)
@@ -175,13 +202,67 @@ class BlueprintsPanel(QWidget):
         self.list_layout.setSpacing(theme.px(3))
         self.list_layout.addStretch(1)
         self.scroll.setWidget(self.host)
-        root.addWidget(self.scroll, 1)
+        layout.addWidget(self.scroll, 1)
 
         self.footer = QLabel("")
         self.footer.setFont(theme.font(7, QFont.Weight.Medium, spacing=0.8))
         self.footer.setStyleSheet(theme.qss(
             "color: rgba(102,118,134,0.95); background: transparent;"))
-        root.addWidget(self.footer)
+        layout.addWidget(self.footer)
+        return page
+
+    def _build_detail_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(theme.px(4))
+
+        back = QPushButton("‹  BACK")
+        back.setCursor(Qt.CursorShape.PointingHandCursor)
+        back.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        back.setFixedHeight(theme.px(22))
+        back.setStyleSheet(theme.qss("""
+            QPushButton { color: rgba(168,184,200,0.9); background: transparent;
+                          border: none; text-align: left; font-size: 8px;
+                          font-weight: 600; }
+            QPushButton:hover { color: #e6f7fa; }
+        """))
+        back.clicked.connect(self._show_list)
+        layout.addWidget(back)
+
+        self.detail_title = QLabel("")
+        self.detail_title.setFont(theme.font(10, QFont.Weight.Bold))
+        self.detail_title.setWordWrap(True)
+        self.detail_title.setStyleSheet(theme.qss(
+            "color: #e8f0f8; background: transparent;"))
+        layout.addWidget(self.detail_title)
+
+        self.detail_where = QLabel("")
+        self.detail_where.setFont(theme.font(7))
+        self.detail_where.setWordWrap(True)
+        self.detail_where.setStyleSheet(theme.qss(
+            "color: rgba(130,148,166,0.95); background: transparent;"))
+        layout.addWidget(self.detail_where)
+
+        self.material_scroll = _scroll_area()
+        self.material_host = QWidget()
+        self.material_host.setStyleSheet(theme.qss("background: transparent;"))
+        self.material_layout = QVBoxLayout(self.material_host)
+        self.material_layout.setContentsMargins(theme.px(2), theme.px(2),
+                                                theme.px(2), theme.px(2))
+        self.material_layout.setSpacing(theme.px(3))
+        self.material_layout.addStretch(1)
+        self.material_scroll.setWidget(self.material_host)
+        layout.addWidget(self.material_scroll, 1)
+
+        self.result_label = QLabel("")
+        self.result_label.setFont(theme.font(8, QFont.Weight.Medium))
+        self.result_label.setWordWrap(True)
+        self.result_label.setStyleSheet(theme.qss(
+            f"color: rgba({AMBER.red()},{AMBER.green()},{AMBER.blue()},0.95);"
+            "background: transparent;"))
+        layout.addWidget(self.result_label)
+        return page
 
     # ------------------------------------------------------------------
     def _on_query(self, text: str) -> None:
@@ -201,7 +282,6 @@ class BlueprintsPanel(QWidget):
 
     def _rebuild(self) -> None:
         self._clear_rows()
-        # Generated files may appear after launch; pick them up once.
         if not self._sets.loaded:
             self._sets.load()
         if not self._crafting.loaded:
@@ -232,7 +312,7 @@ class BlueprintsPanel(QWidget):
                 break
             self.list_layout.insertWidget(
                 self.list_layout.count() - 1,
-                _Row(name, where, craft, key in records))
+                _Row(name, where, craft, key in records, self._show_detail))
             shown += 1
 
         total = len(names)
@@ -254,9 +334,106 @@ class BlueprintsPanel(QWidget):
         return "Source not mapped"
 
     # ------------------------------------------------------------------
+    def _show_list(self) -> None:
+        self.stack.setCurrentIndex(0)
+        self.title.setText("BLUEPRINTS")
+
+    def _show_detail(self, name: str) -> None:
+        self._detail_name = name
+        self._detail_materials = []
+        self._detail_spins = []
+        while self.material_layout.count() > 1:
+            item = self.material_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        self.title.setText("BLUEPRINT")
+        self.detail_title.setText(name)
+
+        records = {_key(record.item_name): record
+                   for record in self._tracker.blueprints}
+        unlocked = [record.item_name for record in records.values()]
+        self.detail_where.setText(self._where(name, unlocked,
+                                             records.get(_key(name))))
+
+        entry = self._crafting.get(name)
+        tiers = (entry or {}).get("tiers") or []
+        materials = (tiers[0].get("materials") if tiers else []) or []
+        if not materials:
+            self.result_label.setText("No recipe data for this blueprint.")
+            self.stack.setCurrentIndex(1)
+            return
+
+        self._detail_materials = materials
+        for material in materials:
+            self.material_layout.insertWidget(
+                self.material_layout.count() - 1,
+                self._material_row(material))
+
+        self.stack.setCurrentIndex(1)
+        self._recalculate()
+
+    def _material_row(self, material: dict) -> QWidget:
+        row = QWidget()
+        row.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        row.setStyleSheet(theme.qss(
+            "background: rgba(255,255,255,0.03); border-radius: 6px;"))
+        row.setFixedHeight(theme.px(30))
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(theme.px(8), 0, theme.px(8), 0)
+        layout.setSpacing(theme.px(6))
+
+        quantity = material.get("quantity") or 0
+        label = QLabel(f"{material.get('slot','')}:  {quantity:g} "
+                       f"{material.get('name','')}")
+        label.setFont(theme.font(8))
+        label.setStyleSheet(theme.qss(
+            "color: rgba(200,212,226,0.95); background: transparent;"))
+        label.setMinimumWidth(0)
+        layout.addWidget(label, 1)
+
+        spin = QDoubleSpinBox()
+        spin.setDecimals(0)
+        spin.setRange(float(material.get("minQuality") or 0), 1000.0)
+        spin.setSingleStep(10)
+        spin.setValue(1000.0)
+        spin.setFixedWidth(theme.px(64))
+        spin.setFont(theme.font(8))
+        spin.setStyleSheet(theme.qss("""
+            QDoubleSpinBox { color: #e8f0f8; background: rgba(255,255,255,0.06);
+                             border: 1px solid rgba(255,255,255,0.12);
+                             border-radius: 5px; padding: 1px 4px; }
+        """))
+        spin.valueChanged.connect(self._recalculate)
+        layout.addWidget(spin)
+        self._detail_spins.append(spin)
+        return row
+
+    def _recalculate(self) -> None:
+        if not self._detail_materials:
+            return
+        qualities = [spin.value() for spin in self._detail_spins]
+        stats = blueprint_calc.changes(self._detail_materials, qualities)
+        quality = blueprint_calc.average_quality(qualities,
+                                                 self._detail_materials)
+        if not stats:
+            self.result_label.setText(
+                f"Craft quality {quality:,.0f} · no stat modifiers in the data")
+            return
+
+        ordered = sorted(stats.values(),
+                         key=lambda entry: -abs(entry["percent"]))
+        lines = [f"{entry['name']}  {entry['percent']:+.1f}%"
+                 for entry in ordered]
+        self.result_label.setText(
+            f"Craft quality {quality:,.0f}\n" + "   ".join(lines))
+
+    # ------------------------------------------------------------------
     def showEvent(self, event):  # noqa: N802
         super().showEvent(event)
-        self._rebuild()
+        if self.stack.currentIndex() == 0:
+            self._rebuild()
 
     def place_default(self, anchor: QWidget | None = None) -> None:
         geo = QGuiApplication.primaryScreen().availableGeometry()
