@@ -51,8 +51,8 @@ def _rank_index(data: dict) -> dict[str, tuple[str, float]]:
 
 
 def _reputation(contract: dict,
-                ranks: dict[str, tuple[str, float]]) -> tuple[str, str]:
-    """(faction, display text) for the contract's reputation gate."""
+                ranks: dict[str, tuple[str, float]]) -> dict:
+    """Faction, rank, reputation value and display text for the gate."""
     subs = contract.get("tokenSubstitutions") or {}
     rank_key = str(subs.get("ReputationRank") or "").strip()
     rank_name, rank_rep = ranks.get(rank_key) or ranks.get(
@@ -85,7 +85,8 @@ def _reputation(contract: dict,
     text = f"{faction} {rank_name}".strip() if faction or rank_name else ""
     if text and rank_rep:
         text = f"{text} ({int(rank_rep)} rep)"
-    return faction, text
+    return {"faction": faction, "rank": rank_name,
+            "reputation": rank_rep, "text": text}
 
 
 def _entity_names(data: dict) -> dict[str, str]:
@@ -228,11 +229,28 @@ def build(data: dict) -> dict[str, dict]:
         title = str(contract.get("title") or contract.get("debugName")
                     or "Contract").strip()
         contractor = str(contract.get("contractorName") or "").strip()
-        faction, requires = _reputation(contract, ranks)
+        rep = _reputation(contract, ranks)
+        faction = rep["faction"]
+        requires = rep["text"]
+
+        # Where the mission sends you: the system it runs in and the concrete
+        # outpost/station from the prerequisites, when the contract names one.
+        system = ", ".join(
+            str(name).strip()
+            for name in contract.get("availableSystems") or []
+            if str(name).strip())
+        places: list[str] = []
+        for place in (contract.get("prerequisites") or {}).get("location") or []:
+            if not isinstance(place, dict):
+                continue
+            label = str(place.get("name") or "").strip()
+            if label and label not in places:
+                places.append(label)
 
         # Keep rank variants apart: the same title at a different standing
         # awards a different pool, so merging them would blur the progress.
-        rank_hint = requires.replace(f"{faction} ", "", 1) if faction else requires
+        rank_hint = (requires.replace(f"{faction} ", "", 1)
+                     if faction else requires)
         key = f"{contractor}: {title}" if contractor else title
         if rank_hint:
             key = f"{key} · {rank_hint}"
@@ -241,11 +259,19 @@ def build(data: dict) -> dict[str, dict]:
                 str(contract.get("debugName") or "").strip()]
         source = "  ·  ".join(bit for bit in bits if bit)
 
-        entry = sets.setdefault(key, {"source": source,
-                                      "requires": requires,
-                                      "blueprints": []})
-        if requires and not entry.get("requires"):
-            entry["requires"] = requires
+        entry = sets.setdefault(key, {"blueprints": []})
+        for field, value in (
+                ("source", source),
+                ("requires", requires),
+                ("faction", faction),
+                ("rank", rep["rank"]),
+                ("reputation", rep["reputation"]),
+                ("system", system),
+                ("location", ", ".join(places[:4])),
+                ("title", title),
+                ("missionType", str(contract.get("missionType") or "").strip())):
+            if value and not entry.get(field):
+                entry[field] = value
         for name in names:
             if name not in entry["blueprints"]:
                 entry["blueprints"].append(name)

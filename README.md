@@ -617,7 +617,11 @@ reputation gate, and tier-1 materials. **Click a row** for the detail view:
 
 ```text
 JS-500                                        HAVEN
-2 of 6 · Headhunters: [TARGET] … · Sr. Contractor (5800 rep)
+2 of 6 owned
+MISSION   Headhunters: [TARGET] needs stomping
+FACTION   Headhunters
+REQUIRED  Sr. Contractor · 5,800 rep
+LOCATION  Pyro
 
 SHELL
 Stileron                                        4.3 SCU
@@ -643,6 +647,12 @@ slider's floor, so a material that cannot meet the slot cannot be selected.
 Blueprints with more than one tier get `TIER 1` … buttons above the parts. When
 a slot accepts alternative materials, its name becomes a dropdown — changing it
 updates the quantity, the slider's floor and the weighted craft quality.
+
+Above the parts, the detail view spells out how to earn the blueprint: the
+mission, the faction whose reputation gates it, the rank and reputation needed,
+and where it runs — the outpost from the contract's prerequisites plus the system
+it is offered in. Bundled data that predates these fields still shows the
+mission and the reputation line.
 
 The maths follows the game's own curves: each modifier interpolates between its
 two quality points, and when a property is described by several segments

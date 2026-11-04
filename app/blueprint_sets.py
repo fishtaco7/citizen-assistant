@@ -61,6 +61,12 @@ class SetInfo:
     blueprints: tuple[str, ...]
     source: str = ""
     requires: str = ""
+    faction: str = ""
+    rank: str = ""
+    reputation: float = 0.0
+    system: str = ""
+    location: str = ""
+    title: str = ""
 
 
 class BlueprintSets:
@@ -73,6 +79,12 @@ class BlueprintSets:
         self._members: dict[str, list[str]] = {}
         self._source: dict[str, str] = {}
         self._requires: dict[str, str] = {}
+        self._faction: dict[str, str] = {}
+        self._rank: dict[str, str] = {}
+        self._reputation: dict[str, float] = {}
+        self._system: dict[str, str] = {}
+        self._location: dict[str, str] = {}
+        self._title: dict[str, str] = {}
         self.load(path)
 
     # ------------------------------------------------------------------
@@ -99,6 +111,12 @@ class BlueprintSets:
         self._members.clear()
         self._source.clear()
         self._requires.clear()
+        self._faction.clear()
+        self._rank.clear()
+        self._reputation.clear()
+        self._system.clear()
+        self._location.clear()
+        self._title.clear()
         self.error = ""
         try:
             with open(path, "r", encoding="utf-8") as fh:
@@ -118,9 +136,24 @@ class BlueprintSets:
                     continue
                 source = ""
                 requires = ""
+                faction = ""
+                rank = ""
+                reputation = 0.0
+                system = ""
+                location = ""
+                title = ""
                 if isinstance(value, Mapping):
                     source = str(value.get("source") or "").strip()
                     requires = str(value.get("requires") or "").strip()
+                    faction = str(value.get("faction") or "").strip()
+                    rank = str(value.get("rank") or "").strip()
+                    system = str(value.get("system") or "").strip()
+                    location = str(value.get("location") or "").strip()
+                    title = str(value.get("title") or "").strip()
+                    try:
+                        reputation = float(value.get("reputation") or 0.0)
+                    except (TypeError, ValueError):
+                        reputation = 0.0
                     members = value.get("blueprints")
                 else:
                     members = value
@@ -131,6 +164,18 @@ class BlueprintSets:
                     self._source[set_name] = source
                 if requires:
                     self._requires[set_name] = requires
+                if faction:
+                    self._faction[set_name] = faction
+                if rank:
+                    self._rank[set_name] = rank
+                if reputation:
+                    self._reputation[set_name] = reputation
+                if system:
+                    self._system[set_name] = system
+                if location:
+                    self._location[set_name] = location
+                if title:
+                    self._title[set_name] = title
                 for member in members:
                     text = str(member).strip()
                     if not text:
@@ -162,12 +207,24 @@ class BlueprintSets:
     def requires_for(self, set_name: str) -> str:
         return self._requires.get(set_name, "")
 
+    def info_for(self, set_name: str) -> SetInfo | None:
+        for info in self.catalogue():
+            if info.name == set_name:
+                return info
+        return None
+
     def catalogue(self) -> list[SetInfo]:
         """Every known set, for the BLUEPRINTS tab."""
         return [SetInfo(name=name,
                         blueprints=tuple(members),
                         source=self._source.get(name, ""),
-                        requires=self._requires.get(name, ""))
+                        requires=self._requires.get(name, ""),
+                        faction=self._faction.get(name, ""),
+                        rank=self._rank.get(name, ""),
+                        reputation=self._reputation.get(name, 0.0),
+                        system=self._system.get(name, ""),
+                        location=self._location.get(name, ""),
+                        title=self._title.get(name, ""))
                 for name, members in self._members.items()]
 
     def progress(self, set_name: str,

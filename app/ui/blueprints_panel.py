@@ -249,6 +249,13 @@ class BlueprintsPanel(QWidget):
             "color: rgba(130,148,166,0.95); background: transparent;"))
         layout.addWidget(self.detail_where)
 
+        self.unlock_host = QWidget()
+        self.unlock_host.setStyleSheet(theme.qss("background: transparent;"))
+        self.unlock_layout = QVBoxLayout(self.unlock_host)
+        self.unlock_layout.setContentsMargins(0, theme.px(1), 0, theme.px(2))
+        self.unlock_layout.setSpacing(theme.px(1))
+        layout.addWidget(self.unlock_host)
+
         self.tier_bar = QWidget()
         self.tier_bar.setStyleSheet(theme.qss("background: transparent;"))
         self.tier_layout = QHBoxLayout(self.tier_bar)
@@ -413,6 +420,82 @@ class BlueprintsPanel(QWidget):
         self.footer.setText(
             f"{len(records)} of {total} unlocked · {shown} shown")
 
+    def _clear_unlock_rows(self) -> None:
+        while self.unlock_layout.count():
+            item = self.unlock_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+    def _info_row(self, label: str, value: str) -> QWidget:
+        row = QWidget()
+        row.setStyleSheet(theme.qss("background: transparent;"))
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(theme.px(8))
+
+        tag = QLabel(label.upper())
+        tag.setFont(theme.font(6, QFont.Weight.Bold, spacing=1.2))
+        tag.setStyleSheet(theme.qss(
+            "color: rgba(110,126,142,0.95); background: transparent;"))
+        tag.setFixedWidth(theme.px(52))
+        tag.setAlignment(Qt.AlignmentFlag.AlignLeft
+                         | Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(tag)
+
+        text = QLabel(value)
+        text.setFont(theme.font(8))
+        text.setWordWrap(True)
+        text.setStyleSheet(theme.qss(
+            "color: rgba(200,212,226,0.95); background: transparent;"))
+        text.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse)
+        layout.addWidget(text, 1)
+        return row
+
+    def _fill_unlock(self, name: str, unlocked: list[str], record=None) -> None:
+        """Mission, faction, rank and location for the detail header."""
+        self._clear_unlock_rows()
+        set_name = self._sets.set_for(name)
+        if not set_name:
+            if record is not None and record.first_seen_iso:
+                self.detail_where.setText(
+                    f"Unlocked {record.first_seen_iso[:10]} · source unknown")
+            else:
+                self.detail_where.setText("Source not mapped")
+            return
+
+        have, total = self._sets.progress(set_name, unlocked)
+        self.detail_where.setText(f"{have} of {total} owned" if total
+                                  else "Owned")
+
+        info = self._sets.info_for(set_name)
+        mission = set_name
+        if " · " in mission:
+            mission = mission.rsplit(" · ", 1)[0]
+        rows: list[tuple[str, str]] = [("Mission", mission)]
+
+        if info is not None and info.faction:
+            rows.append(("Faction", info.faction))
+
+        if info is not None and info.rank:
+            required = info.rank
+            if info.reputation:
+                required = f"{required} · {int(info.reputation):,} rep"
+        else:
+            required = self._sets.requires_for(set_name)
+        if required:
+            rows.append(("Required", required))
+
+        if info is not None:
+            where = " · ".join(part for part in (info.location, info.system)
+                               if part)
+            if where:
+                rows.append(("Location", where))
+
+        for label, value in rows:
+            self.unlock_layout.addWidget(self._info_row(label, value))
+
     def _where(self, name: str, unlocked: list[str], record=None) -> str:
         set_name = self._sets.set_for(name)
         if set_name:
@@ -445,8 +528,7 @@ class BlueprintsPanel(QWidget):
         records = {_key(record.item_name): record
                    for record in self._tracker.blueprints}
         unlocked = [record.item_name for record in records.values()]
-        self.detail_where.setText(self._where(name, unlocked,
-                                             records.get(_key(name))))
+        self._fill_unlock(name, unlocked, records.get(_key(name)))
 
         entry = self._crafting.get(name)
         self._tiers = (entry or {}).get("tiers") or []
@@ -729,33 +811,29 @@ class BlueprintsPanel(QWidget):
         return "  ·  ".join(parts)
 
     @staticmethod
-    def _marginal(total: dict, without: dict) -> dict:
-        """What one part actually adds to the finished item.
+    def _delta(current: dict, previous: dict) -> dict:
+        """The change one part made, applied after the parts before it.
 
-        A part's effect on its own is misleading when another slot modifies the
-        same property: the second -20% recoil modifier is only worth -16% of the
-        original, because it applies to what the first one left.
+        With two 0.8 recoil modifiers the first removes 20 points and the second
+        removes 16 of what the first left; those add up to the -36% total. A
+        ratio would wrongly report 20% twice.
         """
         result: dict[str, dict] = {}
-        for key, entry in total.items():
-            previous = without.get(key) or {}
+        for key, entry in current.items():
+            old = previous.get(key) or {}
             if entry.get("percent") is None:
-                base = previous.get("delta") or 0.0
-                result[key] = {
-                    "name": entry["name"],
-                    "percent": None,
-                    "delta": (entry.get("delta") or 0.0) - base,
-                }
-            else:
-                base = (previous.get("percent") or 0.0) / 100.0
-                if 1.0 + base <= 0.0:
+                change = ((entry.get("delta") or 0.0)
+                          - (old.get("delta") or 0.0))
+                if abs(change) < 1e-9:
                     continue
-                ratio = (1.0 + entry["percent"] / 100.0) / (1.0 + base)
-                result[key] = {
-                    "name": entry["name"],
-                    "percent": (ratio - 1.0) * 100.0,
-                    "delta": None,
-                }
+                result[key] = {"name": entry["name"], "percent": None,
+                               "delta": change}
+            else:
+                change = (entry["percent"] - (old.get("percent") or 0.0))
+                if abs(change) < 1e-9:
+                    continue
+                result[key] = {"name": entry["name"], "percent": change,
+                               "delta": None}
         return result
 
     def _recalculate(self) -> None:
@@ -764,17 +842,20 @@ class BlueprintsPanel(QWidget):
         qualities = [self._quality(edit) for edit in self._detail_qualities]
         stats = blueprint_calc.changes(self._detail_materials, qualities)
 
-        # Per-part effect, measured against the same recipe without that part.
+        # Per-part effect, accumulated in recipe order so the cards add up to
+        # the total below them.
+        running_materials: list[dict] = []
+        running_qualities: list[int] = []
+        previous: dict = {}
         for index, label in enumerate(self._detail_values):
             if index >= len(self._detail_materials):
                 break
-            rest_materials = [material for position, material
-                              in enumerate(self._detail_materials)
-                              if position != index]
-            rest_qualities = [quality for position, quality
-                              in enumerate(qualities) if position != index]
-            without = blueprint_calc.changes(rest_materials, rest_qualities)
-            text = self._format(self._marginal(stats, without))
+            running_materials.append(self._detail_materials[index])
+            running_qualities.append(qualities[index])
+            current = blueprint_calc.changes(running_materials,
+                                             running_qualities)
+            text = self._format(self._delta(current, previous))
+            previous = current
             label.setText(text)
             label.setToolTip(text)
             label.setVisible(bool(text))
