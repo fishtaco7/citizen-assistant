@@ -130,6 +130,26 @@ def _entity_names(data: dict) -> dict[str, str]:
     return names
 
 
+def _pool_names(data: dict) -> set[str]:
+    """Every blueprint name that at least one pool can award.
+
+    The crafting dump also defines recipes for variants that were never hooked
+    into a pool (P6-LR "Archangel", A03 "Canuto", the ADP colour runs). Nothing
+    in the game awards those, so they are not blueprints yet.
+    """
+    available: set[str] = set()
+    for pool in (data.get("blueprintPools") or {}).values():
+        if not isinstance(pool, dict):
+            continue
+        for entry in pool.get("blueprints") or []:
+            if not isinstance(entry, dict):
+                continue
+            name = str(entry.get("name") or "").strip()
+            if name:
+                available.add(name.casefold())
+    return available
+
+
 def _number(value):
     try:
         return round(float(value), 2)
@@ -144,10 +164,17 @@ def _number_or(value, fallback):
 
 
 def build_crafting(recipes: dict,
-                   names: dict[str, str]) -> tuple[dict, int]:
-    """blueprint name -> tiers/materials, plus a count of unmatched recipes."""
+                   names: dict[str, str],
+                   available: set[str] | None = None,
+                   ) -> tuple[dict, int, int]:
+    """blueprint name -> tiers/materials.
+
+    Returns (crafting, unmatched, unreleased). When ``available`` is given, any
+    name outside it is a variant no pool awards and is skipped.
+    """
     crafting: dict[str, dict] = {}
     unmatched = 0
+    unreleased = 0
 
     for blueprint in recipes.get("blueprints") or []:
         if not isinstance(blueprint, dict):
@@ -157,6 +184,9 @@ def build_crafting(recipes: dict,
                 or names.get(entity))
         if not name:
             unmatched += 1
+            continue
+        if available is not None and name.casefold() not in available:
+            unreleased += 1
             continue
 
         tiers: list[dict] = []
@@ -224,7 +254,7 @@ def build_crafting(recipes: dict,
                 "tiers": tiers,
             }
 
-    return crafting, unmatched
+    return crafting, unmatched, unreleased
 
 
 def build(data: dict) -> dict[str, dict]:
@@ -316,6 +346,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="destination (default: the app config folder)")
     parser.add_argument("--recipes", type=Path, default=None,
                         help="crafting_blueprints-<version>.json, adds materials")
+    parser.add_argument("--include-unreleased", action="store_true",
+                        help="keep recipes no blueprint pool awards")
     args = parser.parse_args(argv)
 
     with open(args.merged, "r", encoding="utf-8") as handle:
@@ -344,7 +376,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.recipes:
         with open(args.recipes, "r", encoding="utf-8") as handle:
             recipes = json.load(handle)
-        crafting, unmatched = build_crafting(recipes, _entity_names(data))
+        available = None if args.include_unreleased else _pool_names(data)
+        crafting, unmatched, unreleased = build_crafting(
+            recipes, _entity_names(data), available)
         source = recipes.get("blueprints") or []
         craft_out = out.parent / "blueprint_crafting.json"
         craft_out.parent.mkdir(parents=True, exist_ok=True)
@@ -354,11 +388,9 @@ def main(argv: list[str] | None = None) -> int:
                      f"{args.recipes.name}."),
             "crafting": crafting,
         }, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"{len(crafting)} recipes from {len(source)} blueprints, "
-              f"{unmatched} without a matching name -> {craft_out}")
-        if len(crafting) * 2 < len(source):
-            print("warning: far fewer recipes than blueprints; product names "
-                  "may be colliding", file=sys.stderr)
+        print(f"{len(crafting)} recipes from {len(source)} blueprints "
+              f"({unmatched} unnamed, {unreleased} not awarded by any pool) "
+              f"-> {craft_out}")
 
     return 0
 

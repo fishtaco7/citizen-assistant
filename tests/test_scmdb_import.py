@@ -31,9 +31,20 @@ class BuildCraftingTests(unittest.TestCase):
             _blueprint("Test Widget", [_slot(_option("Iron"),
                                              _option("Titanium"))]),
         ]}
-        crafting, unmatched = build_crafting(recipes, {})
+        crafting, unmatched, unreleased = build_crafting(recipes, {})
         self.assertEqual(list(crafting), ["Test Widget"])
         self.assertEqual(unmatched, 0)
+        self.assertEqual(unreleased, 0)
+
+    def test_recipes_no_pool_awards_are_skipped(self):
+        recipes = {"blueprints": [
+            _blueprint("Test Widget", [_slot(_option("Iron"))]),
+            _blueprint("Phantom Widget", [_slot(_option("Iron"))]),
+        ]}
+        crafting, _, unreleased = build_crafting(
+            recipes, {}, {"test widget"})
+        self.assertEqual(list(crafting), ["Test Widget"])
+        self.assertEqual(unreleased, 1)
 
     def test_every_option_is_kept_when_there_is_a_choice(self):
         recipes = {"blueprints": [
@@ -60,8 +71,8 @@ class BuildCraftingTests(unittest.TestCase):
         blueprint = _blueprint("", [_slot(_option("Iron"))])
         blueprint["productName"] = None
         blueprint["productEntityClass"] = "guid-123"
-        crafting, _ = build_crafting({"blueprints": [blueprint]},
-                                     {"guid-123": "Named Elsewhere"})
+        crafting = build_crafting({"blueprints": [blueprint]},
+                                  {"guid-123": "Named Elsewhere"})[0]
         self.assertEqual(list(crafting), ["Named Elsewhere"])
 
 
