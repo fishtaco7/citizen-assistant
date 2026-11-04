@@ -619,26 +619,58 @@ reputation gate, and tier-1 materials. **Click a row** for the detail view:
 JS-500                                        HAVEN
 2 of 6 · Headhunters: [TARGET] … · Sr. Contractor (5800 rep)
 
-SUBSTRATE   2 Titanium      [1000]
-LATTICE     2 Riccite       [1000]
-COATING     4 Yormandi Eye  [1000]
+SHELL                                             ×4.3
+Stileron                                        4.3 SCU
+QUALITY  ──────────●───────────────────────  [ 834]
+Integrity +13.35%
 
-Craft quality 1,000
-Recoil Handling +4.6%   Recoil Smoothness +3.1%   Recoil Kick -2.0%
+VOLTAGE REGULATOR                                 ×1.7
+Beryl                                           1.7 SCU
+QUALITY  ───────────────●─────────────────  [ 759]
+Power Pips +1
+
+CRAFT QUALITY  787
+                              STAT     BASE   CRAFTED
+                              Integrity   —   +13.35%
+                              Power Pips  —        +2
 ```
 
-Change a material's quality and the stats recompute live; `minQuality` from the
-recipe is the spin box's floor, so a material that cannot meet the slot is
-rejected rather than silently accepted.
+Each part is a card: drag the slider or type an exact number, and the part's own
+effect plus the table below update as you go. `minQuality` from the recipe is the
+slider's floor, so a material that cannot meet the slot cannot be selected.
 
 The maths follows the game's own curves: each modifier interpolates between its
-two quality points, factors for one property multiply per ingredient, and across
-ingredients the default is additive while damage mitigation is stacked. Craft
-quality is a quantity-weighted average of the input qualities.
+two quality points, and when a property is described by several segments
+(0–500, then 501–1000) only the segment covering that quality applies. Factors
+multiply within an ingredient; across ingredients everything adds up except
+damage mitigation, which stacks. Properties the data flags `additive` (power
+pips) are summed as whole numbers. Craft quality is a quantity-weighted average
+of the input qualities.
+
+Nothing is specialised per category — the calculator reads whatever properties
+a recipe carries, so every craftable type behaves the same way:
+
+| Type | Properties in the data |
+| --- | --- |
+| Power plant | `Power Pips` (additive integers) |
+| Cooler | `Coolant Rating` |
+| Quantum drive | `Quantum Speed`, `Fuel Burn` |
+| Shield | `Shield Health` |
+| Radar | min/max aim-assist distance |
+| Armour | `Damage Mitigation` (stacked), min/max temperature |
+| Weapon | `Impact Force`, `Fire Rate`, recoil curves |
+| Salvage head | hull-scraping efficiency, radius, speed |
 
 Absolute damage/armour values are not in any public dataset, so the calculator
 reports **relative** changes. Numbers are meaningful as deltas, not as a
 predicted item card.
+
+The calculator has its own tests, one curve per type, so a change cannot
+silently break a category:
+
+```bash
+python -m unittest discover -s tests
+```
 
 ### Generating the data
 

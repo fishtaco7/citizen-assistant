@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QPalette, QPen
-from PySide6.QtWidgets import (QDoubleSpinBox, QFrame, QHBoxLayout, QLabel,
-                               QLineEdit, QPushButton, QScrollArea,
-                               QStackedWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractSpinBox, QFrame, QHBoxLayout, QLabel,
+                               QLineEdit, QPushButton, QScrollArea, QSlider,
+                               QSpinBox, QStackedWidget, QVBoxLayout, QWidget)
 
 from . import theme
 from .. import blueprint_calc
@@ -117,7 +117,7 @@ class BlueprintsPanel(QWidget):
         self._drag_from = None
         self._detail_name = ""
         self._detail_materials: list[dict] = []
-        self._detail_spins: list[QDoubleSpinBox] = []
+        self._detail_spins: list[QSpinBox] = []
         self._detail_values: list[QLabel] = []
 
         self._build()
@@ -257,13 +257,93 @@ class BlueprintsPanel(QWidget):
         layout.addWidget(self.material_scroll, 1)
 
         self.result_label = QLabel("")
-        self.result_label.setFont(theme.font(8, QFont.Weight.Medium))
+        self.result_label.setFont(theme.font(7, QFont.Weight.Bold, spacing=1.2))
         self.result_label.setWordWrap(True)
         self.result_label.setStyleSheet(theme.qss(
-            f"color: rgba({AMBER.red()},{AMBER.green()},{AMBER.blue()},0.95);"
-            "background: transparent;"))
-        layout.addWidget(self.result_label)
+            "color: rgba(130,148,166,0.95); background: transparent;"))
+
+        # STAT / BASE / CRAFTED, the way the crafting sites lay it out. One row
+        # per property, so a weapon with five stats reads as a list.
+        self.table_host = QWidget()
+        self.table_host.setAttribute(Qt.WidgetAttribute.WA_StyledBackground,
+                                     True)
+        self.table_host.setStyleSheet(theme.qss(
+            "background: rgba(255,255,255,0.03); border-radius: 8px;"))
+        table = QVBoxLayout(self.table_host)
+        table.setContentsMargins(theme.px(12), theme.px(8),
+                                 theme.px(12), theme.px(8))
+        table.setSpacing(theme.px(2))
+        table.addWidget(self.result_label)
+
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.setSpacing(0)
+        for text, width, align in (
+                ("STAT", 0, Qt.AlignmentFlag.AlignLeft),
+                ("BASE", 52, Qt.AlignmentFlag.AlignRight),
+                ("CRAFTED", 78, Qt.AlignmentFlag.AlignRight)):
+            label = QLabel(text)
+            label.setFont(theme.font(6, QFont.Weight.Bold, spacing=1.2))
+            label.setStyleSheet(theme.qss(
+                "color: rgba(110,126,142,0.95); background: transparent;"))
+            label.setAlignment(align | Qt.AlignmentFlag.AlignVCenter)
+            if width:
+                label.setFixedWidth(theme.px(width))
+            header.addWidget(label, 0 if width else 1)
+        table.addLayout(header)
+
+        rule = QFrame()
+        rule.setFixedHeight(theme.px(1))
+        rule.setStyleSheet(theme.qss("background: rgba(255,255,255,0.08);"))
+        table.addWidget(rule)
+
+        self.stats_host = QWidget()
+        self.stats_host.setStyleSheet(theme.qss("background: transparent;"))
+        self.stats_layout = QVBoxLayout(self.stats_host)
+        self.stats_layout.setContentsMargins(0, theme.px(3), 0, 0)
+        self.stats_layout.setSpacing(theme.px(2))
+        table.addWidget(self.stats_host)
+        layout.addWidget(self.table_host)
         return page
+
+    def _clear_result_rows(self) -> None:
+        while self.stats_layout.count():
+            item = self.stats_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+    def _result_row(self, name: str, value: str) -> QWidget:
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        label = QLabel(name)
+        label.setFont(theme.font(8))
+        label.setStyleSheet(theme.qss(
+            "color: rgba(200,212,226,0.95); background: transparent;"))
+        layout.addWidget(label, 1)
+
+        base = QLabel("—")
+        base.setFont(theme.font(8))
+        base.setFixedWidth(theme.px(52))
+        base.setAlignment(Qt.AlignmentFlag.AlignRight
+                          | Qt.AlignmentFlag.AlignVCenter)
+        base.setStyleSheet(theme.qss(
+            "color: rgba(96,110,126,0.95); background: transparent;"))
+        layout.addWidget(base)
+
+        amount = QLabel(value)
+        amount.setFont(theme.font(8, QFont.Weight.DemiBold))
+        amount.setFixedWidth(theme.px(78))
+        amount.setAlignment(Qt.AlignmentFlag.AlignRight
+                            | Qt.AlignmentFlag.AlignVCenter)
+        amount.setStyleSheet(theme.qss(
+            f"color: rgba({GREEN.red()},{GREEN.green()},{GREEN.blue()},1.0);"
+            "background: transparent;"))
+        layout.addWidget(amount)
+        return row
 
     # ------------------------------------------------------------------
     def _on_query(self, text: str) -> None:
@@ -344,6 +424,7 @@ class BlueprintsPanel(QWidget):
         self._detail_materials = []
         self._detail_spins = []
         self._detail_values = []
+        self._clear_result_rows()
         while self.material_layout.count() > 1:
             item = self.material_layout.takeAt(0)
             widget = item.widget()
@@ -363,10 +444,13 @@ class BlueprintsPanel(QWidget):
         tiers = (entry or {}).get("tiers") or []
         materials = (tiers[0].get("materials") if tiers else []) or []
         if not materials:
+            self._clear_result_rows()
+            self.table_host.hide()
             self.result_label.setText("No recipe data for this blueprint.")
             self.stack.setCurrentIndex(1)
             return
 
+        self.table_host.show()
         self._detail_materials = materials
         for material in materials:
             self.material_layout.insertWidget(
@@ -377,51 +461,113 @@ class BlueprintsPanel(QWidget):
         self._recalculate()
 
     def _material_row(self, material: dict) -> QWidget:
-        row = QWidget()
-        row.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        row.setStyleSheet(theme.qss(
-            "background: rgba(255,255,255,0.03); border-radius: 6px;"))
-        row.setFixedHeight(theme.px(34))
-        layout = QHBoxLayout(row)
-        layout.setContentsMargins(theme.px(8), 0, theme.px(8), 0)
-        layout.setSpacing(theme.px(6))
+        card = QWidget()
+        card.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        card.setStyleSheet(theme.qss(
+            "background: rgba(255,255,255,0.03); border-radius: 8px;"))
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(theme.px(12), theme.px(8),
+                                  theme.px(12), theme.px(8))
+        layout.setSpacing(theme.px(3))
 
-        quantity = material.get("quantity") or 0
-        label = QLabel(f"{material.get('slot','')}:  {quantity:g} "
-                       f"{material.get('name','')}")
-        label.setFont(theme.font(8))
-        label.setStyleSheet(theme.qss(
-            "color: rgba(200,212,226,0.95); background: transparent;"))
-        label.setMinimumWidth(0)
-        layout.addWidget(label, 1)
+        quantity = float(material.get("quantity") or 0)
+
+        head = QHBoxLayout()
+        head.setContentsMargins(0, 0, 0, 0)
+        head.setSpacing(theme.px(4))
+        slot = QLabel(str(material.get("slot") or "PART").upper())
+        slot.setFont(theme.font(7, QFont.Weight.Bold, spacing=1.2))
+        slot.setStyleSheet(theme.qss(
+            "color: rgba(168,184,200,0.95); background: transparent;"))
+        head.addWidget(slot, 1)
+        count = QLabel(f"×{quantity:g}")
+        count.setFont(theme.font(7, QFont.Weight.Medium))
+        count.setStyleSheet(theme.qss(
+            "color: rgba(110,126,142,0.95); background: transparent;"))
+        head.addWidget(count)
+        layout.addLayout(head)
+
+        line = QHBoxLayout()
+        line.setContentsMargins(0, 0, 0, 0)
+        line.setSpacing(theme.px(6))
+        name = QLabel(str(material.get("name") or ""))
+        name.setFont(theme.font(9, QFont.Weight.DemiBold))
+        name.setStyleSheet(theme.qss(
+            "color: #e8f0f8; background: transparent;"))
+        line.addWidget(name, 1)
+        amount = QLabel(f"{quantity:g} SCU")
+        amount.setFont(theme.font(7))
+        amount.setStyleSheet(theme.qss(
+            "color: rgba(130,148,166,0.95); background: transparent;"))
+        line.addWidget(amount)
+        layout.addLayout(line)
+
+        quality = QHBoxLayout()
+        quality.setContentsMargins(0, 0, 0, 0)
+        quality.setSpacing(theme.px(8))
+        caption = QLabel("QUALITY")
+        caption.setFont(theme.font(7, QFont.Weight.Bold, spacing=1.0))
+        caption.setStyleSheet(theme.qss(
+            "color: rgba(130,148,166,0.95); background: transparent;"))
+        caption.setFixedWidth(theme.px(50))
+        quality.addWidget(caption)
+
+        floor = int(material.get("minQuality") or 0)
+        slider = QSlider(Qt.Orientation.Horizontal)
+        slider.setRange(floor, 1000)
+        slider.setSingleStep(1)
+        slider.setPageStep(25)
+        slider.setValue(1000)
+        slider.setFixedHeight(theme.px(16))
+        slider.setStyleSheet(theme.qss("""
+            QSlider { background: transparent; }
+            QSlider::groove:horizontal {
+                height: 2px; background: rgba(255,255,255,0.16);
+                border-radius: 1px;
+            }
+            QSlider::sub-page:horizontal {
+                background: rgba(79,209,224,0.55); border-radius: 1px;
+            }
+            QSlider::handle:horizontal {
+                background: #e8f4ff; width: 10px; margin: -5px 0;
+                border-radius: 5px; border: none;
+            }
+        """))
+        quality.addWidget(slider, 1)
+
+        spin = QSpinBox()
+        spin.setRange(floor, 1000)
+        spin.setSingleStep(5)
+        spin.setValue(1000)
+        spin.setFixedWidth(theme.px(56))
+        spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        spin.setFont(theme.font(8))
+        spin.setStyleSheet(theme.qss("""
+            QSpinBox { color: #e8f0f8; background: rgba(255,255,255,0.05);
+                       border: 1px solid rgba(255,255,255,0.14);
+                       border-radius: 5px; padding: 1px 3px; }
+        """))
+        quality.addWidget(spin)
+        layout.addLayout(quality)
+
+        slider.valueChanged.connect(spin.setValue)
+        spin.valueChanged.connect(slider.setValue)
+        spin.valueChanged.connect(self._recalculate)
+        self._detail_spins.append(spin)
 
         effect = QLabel("")
         effect.setFont(theme.font(7, QFont.Weight.DemiBold))
-        effect.setAlignment(Qt.AlignmentFlag.AlignRight
-                            | Qt.AlignmentFlag.AlignVCenter)
-        effect.setMaximumWidth(theme.px(190))
+        effect.setWordWrap(True)
         effect.setStyleSheet(theme.qss(
-            f"color: rgba({AMBER.red()},{AMBER.green()},{AMBER.blue()},0.95);"
-            "background: transparent;"))
+            f"color: rgba({GREEN.red()},{GREEN.green()},{GREEN.blue()},0.95);"
+            "background: rgba(94,214,138,0.08);"
+            "border: 1px solid rgba(94,214,138,0.22);"
+            "border-radius: 4px; padding: 2px 6px;"))
+        effect.hide()
         layout.addWidget(effect)
         self._detail_values.append(effect)
-
-        spin = QDoubleSpinBox()
-        spin.setDecimals(0)
-        spin.setRange(float(material.get("minQuality") or 0), 1000.0)
-        spin.setSingleStep(10)
-        spin.setValue(1000.0)
-        spin.setFixedWidth(theme.px(64))
-        spin.setFont(theme.font(8))
-        spin.setStyleSheet(theme.qss("""
-            QDoubleSpinBox { color: #e8f0f8; background: rgba(255,255,255,0.06);
-                             border: 1px solid rgba(255,255,255,0.12);
-                             border-radius: 5px; padding: 1px 4px; }
-        """))
-        spin.valueChanged.connect(self._recalculate)
-        layout.addWidget(spin)
-        self._detail_spins.append(spin)
-        return row
+        return card
 
     @staticmethod
     def _format(stats: dict) -> str:
@@ -438,25 +584,34 @@ class BlueprintsPanel(QWidget):
             return
         qualities = [spin.value() for spin in self._detail_spins]
 
-        # Per-part effect, so each slot explains itself the way SCMDB shows it.
+        # Per-part effect, so each slot explains itself the way the crafting
+        # sites show it.
         for index, label in enumerate(self._detail_values):
             if index >= len(self._detail_materials):
                 break
             single = blueprint_calc.changes([self._detail_materials[index]],
                                             [qualities[index]])
-            text = self._format(single) or "no effect"
+            text = self._format(single)
             label.setText(text)
             label.setToolTip(text)
+            label.setVisible(bool(text))
 
         stats = blueprint_calc.changes(self._detail_materials, qualities)
         quality = blueprint_calc.average_quality(qualities,
                                                  self._detail_materials)
+        self._clear_result_rows()
+        self.result_label.setText(f"CRAFT QUALITY  {quality:,.0f}")
         if not stats:
             self.result_label.setText(
-                f"Craft quality {quality:,.0f} · no stat modifiers in the data")
+                f"CRAFT QUALITY  {quality:,.0f}  ·  no stat modifiers")
             return
-        self.result_label.setText(
-            f"Craft quality {quality:,.0f}     {self._format(stats)}")
+        for entry in sorted(stats.values(), key=lambda item: item["name"]):
+            if entry.get("percent") is None:
+                value = f"{entry.get('delta', 0.0):+.0f}"
+            else:
+                value = f"{entry['percent']:+.2f}%"
+            self.stats_layout.addWidget(
+                self._result_row(entry["name"], value))
 
     # ------------------------------------------------------------------
     def showEvent(self, event):  # noqa: N802
