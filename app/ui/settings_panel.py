@@ -321,6 +321,18 @@ class SettingsPanel(QWidget):
         scan_row.addWidget(self.pause_btn, 1)
         scan_row.addWidget(self.debug_btn, 1)
         root.addLayout(scan_row)
+
+        # Preview sits with the scanning controls, not under Voice: it belongs
+        # to the scanner and is what SHOW PREVIEW turns on.
+        self.preview = QLabel()
+        self.preview.setFixedHeight(theme.px(78))
+        self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview.setStyleSheet(theme.qss(
+            "background: rgba(0,0,0,0.35); border: 1px dashed rgba(79,209,224,0.25);"
+            "border-radius: 6px; color: rgba(130,148,166,0.7); font-size: 9px;"))
+        self.preview.setText("Drag a box around the signature, then confirm the digits below")
+        self.preview.hide()
+        root.addWidget(self.preview)
         root.addSpacing(theme.px(8))
 
         # Voice -------------------------------------------------------
@@ -352,16 +364,6 @@ class SettingsPanel(QWidget):
         voice_row.addWidget(self.volume_slider, 1)
         voice_row.addWidget(self.volume_label)
         root.addLayout(voice_row)
-
-        self.preview = QLabel()
-        self.preview.setFixedHeight(theme.px(78))
-        self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview.setStyleSheet(theme.qss(
-            "background: rgba(0,0,0,0.35); border: 1px dashed rgba(79,209,224,0.25);"
-            "border-radius: 6px; color: rgba(130,148,166,0.7); font-size: 9px;"))
-        self.preview.setText("Drag a box around the signature, then confirm the digits below")
-        self.preview.hide()
-        root.addWidget(self.preview)
         root.addSpacing(theme.px(8))
 
         # Signature data ----------------------------------------------
