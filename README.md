@@ -668,9 +668,9 @@ listed under **ALSO**. Bundled data that predates these fields falls back to the
 mission and reputation line.
 
 The recipe dump also contains definitions that exist in the game files but that
-no mission awards yet. They are kept in the data and hidden from the list rather
-than shown as unearnable; the footer reports how many, and the audit lists
-examples.
+no mission awards yet. They are not listed. The shipped file only carries
+recipes a pool awards; if a locally generated file includes more, the app hides
+anything unawarded unless you already own it, and the footer reports the count.
 
 The maths follows the game's own curves: each modifier interpolates between its
 two quality points, and when a property is described by several segments
