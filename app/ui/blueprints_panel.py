@@ -99,6 +99,65 @@ class _Row(QWidget):
             event.accept()
 
 
+class _PoolRow(QWidget):
+    """A mission result: the pool itself, with how much of it is owned."""
+
+    def __init__(self, title: str, detail: str, progress: str,
+                 on_click, parent=None):
+        super().__init__(parent)
+        self._on_click = on_click
+        self._title = title
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setStyleSheet(theme.qss(
+            "background: rgba(79,209,224,0.07); border-radius: 7px;"
+            "border: 1px solid rgba(79,209,224,0.20);"))
+        self.setFixedHeight(theme.px(62))
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip(f"{title}\n{detail}\n{progress}\nClick to filter")
+
+        row = QHBoxLayout(self)
+        row.setContentsMargins(theme.px(10), theme.px(5),
+                               theme.px(10), theme.px(5))
+        row.setSpacing(theme.px(8))
+
+        text = QVBoxLayout()
+        text.setContentsMargins(0, 0, 0, 0)
+        text.setSpacing(theme.px(0))
+
+        title_label = QLabel(title)
+        title_label.setFont(theme.font(9, QFont.Weight.DemiBold))
+        title_label.setStyleSheet(theme.qss(
+            "color: #e8f0f8; background: transparent;"))
+        text.addWidget(title_label)
+
+        detail_label = QLabel(detail)
+        detail_label.setFont(theme.font(7))
+        detail_label.setStyleSheet(theme.qss(
+            "color: rgba(130,148,166,0.95); background: transparent;"))
+        text.addWidget(detail_label)
+
+        progress_label = QLabel(progress)
+        progress_label.setFont(theme.font(7, QFont.Weight.Medium))
+        progress_label.setStyleSheet(theme.qss(
+            "color: rgba(79,209,224,0.95); background: transparent;"))
+        text.addWidget(progress_label)
+        row.addLayout(text, 1)
+
+        badge = QLabel("POOL")
+        badge.setFont(theme.font(7, QFont.Weight.Bold, spacing=0.8))
+        badge.setStyleSheet(theme.qss(
+            "color: rgba(79,209,224,0.95); background: transparent;"))
+        row.addWidget(badge)
+
+        for item in (title_label, detail_label, progress_label):
+            item.setMinimumWidth(0)
+
+    def mousePressEvent(self, event):  # noqa: N802
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._on_click(self._title)
+            event.accept()
+
+
 class BlueprintsPanel(QWidget):
     close_requested = Signal()
 
@@ -409,13 +468,40 @@ class BlueprintsPanel(QWidget):
                          if _key(blueprint) not in names)
 
         needle = self._query.strip().casefold()
+
+        # Searching a mission should surface the pool itself, including members
+        # whose primary (easiest) route is a different mission.
+        pools = []
+        pool_members: set[str] = set()
+        if len(needle) >= 3:
+            for info in self._sets.catalogue():
+                haystack = (f"{info.name} {info.faction} "
+                            f"{info.title}").casefold()
+                if needle not in haystack:
+                    continue
+                pools.append(info)
+                pool_members.update(_key(member)
+                                    for member in info.blueprints)
+
+        for info in pools[:4]:
+            have, total = self._sets.progress(info.name, unlocked)
+            title = info.name.rsplit(" · ", 1)[0]
+            detail = " · ".join(bit for bit in
+                                (info.faction, info.rank, info.system) if bit)
+            progress = f"{have} of {total} owned" if total else "Owned"
+            self.list_layout.insertWidget(
+                self.list_layout.count() - 1,
+                _PoolRow(title, detail, progress,
+                         lambda text: self.search.setText(text)))
+
         shown = 0
         for key in sorted(names, key=str.casefold):
             name = names[key]
             where = self._where(name, unlocked, records.get(key))
             craft = self._crafting.summary(name) or "No recipe data"
-            if needle and needle not in f"{name} {where} {craft}".casefold():
-                continue
+            if needle and key not in pool_members:
+                if needle not in f"{name} {where} {craft}".casefold():
+                    continue
             if shown >= MAX_ROWS:
                 break
             self.list_layout.insertWidget(
@@ -426,6 +512,9 @@ class BlueprintsPanel(QWidget):
         total = len(names)
         self.status.setText(f"{len(records)} / {total} KNOWN")
         extra = f" · {unreleased} unreleased hidden" if unreleased else ""
+        if pools:
+            extra += (f" · {len(pools)} mission"
+                      f"{'s' if len(pools) > 1 else ''} matched")
         self.footer.setText(
             f"{len(records)} of {total} unlocked · {shown} shown{extra}")
 

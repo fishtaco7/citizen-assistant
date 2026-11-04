@@ -624,6 +624,11 @@ it into this file. Re-run the importer after a patch and the mapping is current.
 mission, reputation or material. Each row shows ownership, set progress with the
 reputation gate, and tier-1 materials. **Click a row** for the detail view:
 
+Searching a mission name — or a faction like `Citizens for Prosperity` — puts the
+mission itself at the top as a **POOL** result showing `3 of 14 owned`, followed
+by every blueprint in that pool, including ones whose easiest route is a
+different mission. Clicking the pool fills the search with that mission.
+
 ```text
 JS-500                                        HAVEN
 2 of 6 owned
