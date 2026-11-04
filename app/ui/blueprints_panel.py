@@ -516,6 +516,11 @@ class BlueprintsPanel(QWidget):
                 required = f"{required} · {int(info.reputation):,} rep"
         else:
             required = self._sets.requires_for(set_name)
+            # An ungated pool ("Wikelo", "Recco Battaglia") would just repeat
+            # the faction here.
+            faction = (info.faction if info is not None else "").strip()
+            if required.strip().casefold() == faction.casefold():
+                required = ""
         if required:
             rows.append(("Required", required))
 

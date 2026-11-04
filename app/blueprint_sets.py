@@ -208,6 +208,31 @@ class BlueprintSets:
                 self._set_of[_key(text)] = target
                 self._members.setdefault(target, [])
 
+        self._backfill()
+
+    def _backfill(self) -> None:
+        """Share details between rank variants of the same mission.
+
+        The dump sometimes has location data on one rank's contract but not on
+        another; they are the same mission, so the sibling's values apply.
+        """
+        groups: dict[str, list[str]] = {}
+        for set_name in self._members:
+            base = set_name.rsplit(" · ", 1)[0]
+            groups.setdefault(base, []).append(set_name)
+        for names in groups.values():
+            if len(names) < 2:
+                continue
+            for mapping in (self._system, self._location, self._places,
+                            self._faction):
+                donor = next((mapping[name] for name in names
+                              if mapping.get(name)), None)
+                if donor is None:
+                    continue
+                for name in names:
+                    if not mapping.get(name):
+                        mapping[name] = donor
+
     # ------------------------------------------------------------------
     @property
     def loaded(self) -> bool:

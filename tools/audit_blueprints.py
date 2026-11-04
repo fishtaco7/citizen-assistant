@@ -109,7 +109,9 @@ def main(argv: list[str] | None = None) -> int:
     _show("Recipes with no materials", empty_recipe)
     _show("Materials with no name", sorted(set(empty_material)))
     _show("Materials with zero quantity", sorted(set(zero_quantity)))
-    _show("Recipes no mission pool claims", unsourced)
+
+    print("\nPool-backed recipes with no contract in the dump (expected)")
+    _show("Recipes with no mission mapping", unsourced)
 
     print("\nUnlock details (missing but not fatal)")
     _show("Pools without a faction", no_faction)
@@ -117,9 +119,9 @@ def main(argv: list[str] | None = None) -> int:
     _show("Pools without a location", no_places)
 
     problems = (missing_recipe or empty_recipe or empty_material
-                or zero_quantity or unsourced)
-    print("\nRESULT:", "gaps found" if problems else "every blueprint has "
-          "a recipe, materials and a source")
+                or zero_quantity)
+    print("\nRESULT:", "gaps found" if problems else
+          "every mapped blueprint has a recipe and materials")
     return 1 if problems else 0
 
 
