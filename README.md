@@ -693,6 +693,16 @@ That writes `app/data/blueprint_sets.json` and, beside it,
 `app/data/blueprint_crafting.json`. Commit both, and every install picks them up
 on the next update.
 
+To check the result — segment coverage, aggregation mode per property, and the
+numbers at stock and perfect quality — run:
+
+```bash
+python -m tools.verify_crafting
+```
+
+It prints one representative blueprint per property family, which is the quickest
+way to compare a value against a crafting site.
+
 Files in `%APPDATA%\Citizen Assistant\` win over the bundled ones, so a locally
 generated set can be used without touching the install.
 

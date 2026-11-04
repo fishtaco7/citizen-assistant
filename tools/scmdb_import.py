@@ -172,17 +172,20 @@ def build_crafting(recipes: dict,
                         "additive": bool(modifier.get("additive")),
                     })
                 # Keep the first option at the top level so older readers and the
-                # list summary keep working, and the full set for the picker.
+                # list summary keep working; only store the full set when there
+                # is a choice to offer.
                 first = parsed[0]
-                materials.append({
+                material = {
                     "slot": str(slot.get("name") or "").strip(),
                     "type": first["type"],
                     "name": first["name"],
                     "quantity": first["quantity"],
                     "minQuality": first["minQuality"],
-                    "options": parsed,
                     "modifiers": modifiers,
-                })
+                }
+                if len(parsed) > 1:
+                    material["options"] = parsed
+                materials.append(material)
             tiers.append({
                 "craftTime": tier.get("craftTimeSeconds"),
                 "materials": materials,
