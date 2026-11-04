@@ -27,11 +27,7 @@ def _load(path: Path) -> dict:
 
 
 def _modes(key: str) -> str:
-    normalised = "".join(character for character in key.casefold()
-                         if character.isalnum())
-    if normalised in blueprint_calc._STACKED_KEYS:
-        return "stacked"
-    return "additive"
+    return "multiplied"
 
 
 def _family(key: str) -> str:

@@ -6,27 +6,17 @@ A slot's modifier is a straight line between two quality points:
 
 One property may be described by several segments (0-500, then 501-1000); only
 the segment covering the quality applies, because they are pieces of a single
-curve rather than independent modifiers. Factors for one property multiply
-within an ingredient. Across ingredients the default is **additive** (sum of the
-deviations), damage mitigation is **stacked** (product), and properties flagged
-``additive`` in the data (power pips) are summed as plain numbers. Verified
-against sccraftlab's bundle, whose `Jp` function does exactly this.
+curve rather than independent modifiers. Factors are multipliers, so they
+**multiply** across ingredients: two slots at 0.8 leave 0.64 of the original
+value, not 0.6. Properties the data flags ``additive`` (power pips) are the
+exception and are summed as plain numbers. Verified against sccraftlab's bundle
+and the JS-500 reference values.
 """
 from __future__ import annotations
-
-# sccraftlab combines these with `stacked`; everything else is additive. The
-# names differ per item type (power plants, armour, weapons) but the rule is
-# the same: only mitigation multiplies.
-_STACKED_KEYS = {"armordamagemitigation", "armormitigation"}
 
 
 def _clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
-
-
-def _normalise(key: str) -> str:
-    return "".join(character for character in key.casefold()
-                   if character.isalnum())
 
 
 def factor(modifier: dict, quality: float) -> float:
@@ -64,11 +54,10 @@ def _segment(modifiers: list[dict], quality: float) -> dict | None:
 def changes(materials: list[dict], qualities: list[float]) -> dict[str, dict]:
     """{property key: {name, percent, delta}} for the whole recipe.
 
-    Multiplicative properties report a factor and a percentage; additive ones
-    (power pips and similar) report an absolute delta instead.
+    Multiplicative properties report a percentage; additive ones (power pips
+    and similar) report an absolute delta instead.
     """
-    deviation: dict[str, float] = {}
-    stacked: dict[str, float] = {}
+    multiplied: dict[str, float] = {}
     added: dict[str, float] = {}
     additive_keys: set[str] = set()
     names: dict[str, str] = {}
@@ -94,18 +83,15 @@ def changes(materials: list[dict], qualities: list[float]) -> dict[str, dict]:
                 additive_keys.add(key)
                 added[key] = added.get(key, 0.0) + value
             else:
-                deviation[key] = deviation.get(key, 0.0) + (value - 1.0)
-                stacked[key] = stacked.get(key, 1.0) * value
+                multiplied[key] = multiplied.get(key, 1.0) * value
 
     result: dict[str, dict] = {}
-    for key in set(deviation) | set(added):
+    for key in set(multiplied) | set(added):
         if key in additive_keys:
             result[key] = {"name": names.get(key, key), "percent": None,
                            "delta": added.get(key, 0.0)}
         else:
-            value = (stacked.get(key, 1.0)
-                     if _normalise(key) in _STACKED_KEYS
-                     else 1.0 + deviation.get(key, 0.0))
+            value = multiplied.get(key, 1.0)
             result[key] = {"name": names.get(key, key), "percent":
                            (value - 1.0) * 100.0, "delta": None}
     return result

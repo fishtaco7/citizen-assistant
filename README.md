@@ -646,11 +646,12 @@ updates the quantity, the slider's floor and the weighted craft quality.
 
 The maths follows the game's own curves: each modifier interpolates between its
 two quality points, and when a property is described by several segments
-(0–500, then 501–1000) only the segment covering that quality applies. Factors
-multiply within an ingredient; across ingredients everything adds up except
-damage mitigation, which stacks. Properties the data flags `additive` (power
-pips) are summed as whole numbers. Craft quality is a quantity-weighted average
-of the input qualities.
+(0–500, then 501–1000) only the segment covering that quality applies. Modifiers
+are multipliers, so they **multiply across ingredients** — two parts at −20%
+leave 0.8 × 0.8 = 0.64, not 0.6 — and each part's card shows its real marginal
+share of the result. Properties the data flags `additive` (power pips) are the
+exception and are summed as whole numbers. Craft quality is a quantity-weighted
+average of the input qualities.
 
 Nothing is specialised per category — the calculator reads whatever properties
 a recipe carries, so every craftable type behaves the same way:

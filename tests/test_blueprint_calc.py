@@ -100,7 +100,7 @@ class ArmourTests(unittest.TestCase):
         low = blueprint_calc.changes([carapace, liner], [0, 0])
         self.assertAlmostEqual(low[MITIGATION]["percent"], -14.5, places=6)
 
-    def test_temperatures_stay_additive(self):
+    def test_temperatures_are_separate_properties(self):
         material = _material(
             _modifier("armor_temperaturemin", 0, 1000, 0.8, 1.2),
             _modifier("armor_temperaturemax", 0, 1000, 0.8, 1.2),
@@ -113,7 +113,7 @@ class ArmourTests(unittest.TestCase):
 
 
 class WeaponTests(unittest.TestCase):
-    def test_damage_is_additive_across_slots(self):
+    def test_damage_multiplies_across_slots(self):
         # Vendetta HMG frame and barrels at quality 750.
         frame = _material(
             _modifier(DAMAGE, 0, 499, 0.95, 1.0),
@@ -124,7 +124,16 @@ class WeaponTests(unittest.TestCase):
             _modifier(DAMAGE, 500, 1000, 1.0, 1.15),
         )
         result = blueprint_calc.changes([frame, barrels], [750, 750])
-        self.assertAlmostEqual(result[DAMAGE]["percent"], 10.0, places=6)
+        self.assertAlmostEqual(result[DAMAGE]["percent"], 10.1875, places=4)
+
+    def test_duplicate_recoil_modifiers_do_not_double(self):
+        # P6-LR: frame and stock are both 1.2 -> 0.8. The second slot applies to
+        # what the first left, so the pair is -36%, not -40%.
+        frame = _material(_modifier("weapon_recoil_kick", 0, 1000, 1.2, 0.8))
+        stock = _material(_modifier("weapon_recoil_kick", 0, 1000, 1.2, 0.8))
+        result = blueprint_calc.changes([frame, stock], [1000, 1000])
+        self.assertAlmostEqual(
+            result["weapon_recoil_kick"]["percent"], -36.0, places=6)
 
     def test_recoil_curves_are_separate_properties(self):
         frame = _material(
@@ -139,11 +148,13 @@ class WeaponTests(unittest.TestCase):
 
 
 class ShieldAndQuantumTests(unittest.TestCase):
-    def test_shield_health_is_additive(self):
+    def test_shield_health_multiplies(self):
         slots = [_material(_modifier(SHIELD, 0, 1000, 0.8, 1.2))
                  for _ in range(3)]
         result = blueprint_calc.changes(slots, [500, 500, 500])
         self.assertAlmostEqual(result[SHIELD]["percent"], 0.0, places=6)
+        perfect = blueprint_calc.changes(slots, [1000, 1000, 1000])
+        self.assertAlmostEqual(perfect[SHIELD]["percent"], 72.8, places=6)
 
     def test_fuel_burn_falls_with_quality(self):
         material = _material(

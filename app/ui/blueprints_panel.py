@@ -728,24 +728,57 @@ class BlueprintsPanel(QWidget):
                 parts.append(f"{entry['name']} {entry['percent']:+.2f}%")
         return "  ·  ".join(parts)
 
+    @staticmethod
+    def _marginal(total: dict, without: dict) -> dict:
+        """What one part actually adds to the finished item.
+
+        A part's effect on its own is misleading when another slot modifies the
+        same property: the second -20% recoil modifier is only worth -16% of the
+        original, because it applies to what the first one left.
+        """
+        result: dict[str, dict] = {}
+        for key, entry in total.items():
+            previous = without.get(key) or {}
+            if entry.get("percent") is None:
+                base = previous.get("delta") or 0.0
+                result[key] = {
+                    "name": entry["name"],
+                    "percent": None,
+                    "delta": (entry.get("delta") or 0.0) - base,
+                }
+            else:
+                base = (previous.get("percent") or 0.0) / 100.0
+                if 1.0 + base <= 0.0:
+                    continue
+                ratio = (1.0 + entry["percent"] / 100.0) / (1.0 + base)
+                result[key] = {
+                    "name": entry["name"],
+                    "percent": (ratio - 1.0) * 100.0,
+                    "delta": None,
+                }
+        return result
+
     def _recalculate(self) -> None:
         if not self._detail_materials:
             return
         qualities = [self._quality(edit) for edit in self._detail_qualities]
+        stats = blueprint_calc.changes(self._detail_materials, qualities)
 
-        # Per-part effect, so each slot explains itself the way the crafting
-        # sites show it.
+        # Per-part effect, measured against the same recipe without that part.
         for index, label in enumerate(self._detail_values):
             if index >= len(self._detail_materials):
                 break
-            single = blueprint_calc.changes([self._detail_materials[index]],
-                                            [qualities[index]])
-            text = self._format(single)
+            rest_materials = [material for position, material
+                              in enumerate(self._detail_materials)
+                              if position != index]
+            rest_qualities = [quality for position, quality
+                              in enumerate(qualities) if position != index]
+            without = blueprint_calc.changes(rest_materials, rest_qualities)
+            text = self._format(self._marginal(stats, without))
             label.setText(text)
             label.setToolTip(text)
             label.setVisible(bool(text))
 
-        stats = blueprint_calc.changes(self._detail_materials, qualities)
         quality = blueprint_calc.average_quality(qualities,
                                                  self._detail_materials)
         self._clear_result_rows()
