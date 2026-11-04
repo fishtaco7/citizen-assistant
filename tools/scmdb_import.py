@@ -121,7 +121,8 @@ def build_crafting(recipes: dict,
         if not isinstance(blueprint, dict):
             continue
         entity = str(blueprint.get("productEntityClass") or "").strip().lower()
-        name = names.get(entity)
+        name = (str(blueprint.get("productName") or "").strip()
+                or names.get(entity))
         if not name:
             unmatched += 1
             continue
