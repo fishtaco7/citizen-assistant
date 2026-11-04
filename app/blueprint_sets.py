@@ -76,6 +76,7 @@ class BlueprintSets:
     def __init__(self, path: Path | str | None = None):
         self.path: Path | None = None
         self.error = ""
+        self.origin = ""
         self._set_of: dict[str, str] = {}
         self._sets_of: dict[str, list[str]] = {}
         self._members: dict[str, list[str]] = {}
@@ -102,9 +103,13 @@ class BlueprintSets:
                 continue
             self.path = candidate
             self._read(candidate)
+            if self.error:
+                # A corrupt override should not hide the bundled data.
+                _log(f"{candidate} -> error={self.error}, trying next")
+                continue
+            self.origin = "user" if candidate != SHIPPED else "bundled"
             _log(f"{candidate} -> {len(self._set_of)} names, "
-                 f"{len(self._members)} sets"
-                 + (f", error={self.error}" if self.error else ""))
+                 f"{len(self._members)} sets")
             return
         self.path = None
         _log("no blueprint_sets.json found")

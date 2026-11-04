@@ -515,6 +515,9 @@ class BlueprintsPanel(QWidget):
         if pools:
             extra += (f" · {len(pools)} mission"
                       f"{'s' if len(pools) > 1 else ''} matched")
+        if (self._crafting.origin == "user"
+                or self._sets.origin == "user"):
+            extra += " · config data"
         self.footer.setText(
             f"{len(records)} of {total} unlocked · {shown} shown{extra}")
 
@@ -615,8 +618,10 @@ class BlueprintsPanel(QWidget):
 
         if info is not None:
             parts: list[str] = []
+            system = info.system.casefold()
+            skip = {system, f"{system} system"} if system else set()
             for place in info.places:
-                if info.system and place.casefold() == info.system.casefold():
+                if place.casefold() in skip:
                     continue
                 if place not in parts:
                     parts.append(place)
@@ -964,6 +969,8 @@ class BlueprintsPanel(QWidget):
 
     def _recalculate(self) -> None:
         if not self._detail_materials:
+            self._clear_result_rows()
+            self.result_label.setText("No recipe data for this tier.")
             return
         qualities = [self._quality(edit) for edit in self._detail_qualities]
         stats = blueprint_calc.changes(self._detail_materials, qualities)

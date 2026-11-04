@@ -29,11 +29,13 @@ class CraftingData:
 
     def __init__(self, path: Path | str | None = None):
         self.path: Path | None = None
+        self.origin = ""
         self._by_name: dict[str, dict] = {}
         self.loaded = False
         self.load(path)
 
     def load(self, path: Path | str | None = None) -> None:
+        self.origin = ""
         candidates = ([Path(path).expanduser()] if path is not None
                       else [config_dir() / FILE_NAME, SHIPPED])
         for candidate in candidates:
@@ -42,19 +44,21 @@ class CraftingData:
                     continue
             except OSError:
                 continue
-            self.path = candidate
-            self._read(candidate)
-            return
+            if self._read(candidate):
+                self.path = candidate
+                self.origin = "user" if candidate != SHIPPED else "bundled"
+                return
+            # A corrupt override must not hide the bundled copy.
         self.path = None
 
-    def _read(self, path: Path) -> None:
+    def _read(self, path: Path) -> bool:
         try:
             with open(path, "r", encoding="utf-8") as handle:
                 raw = json.load(handle)
         except (OSError, ValueError):
             self._by_name = {}
             self.loaded = False
-            return
+            return False
         entries = raw.get("crafting") if isinstance(raw, dict) else None
         self._by_name = {}
         if isinstance(entries, dict):
@@ -65,6 +69,7 @@ class CraftingData:
                     stored["name"] = str(name)
                     self._by_name[key] = stored
         self.loaded = bool(self._by_name)
+        return self.loaded
 
     # ------------------------------------------------------------------
     def get(self, name: str) -> dict | None:
