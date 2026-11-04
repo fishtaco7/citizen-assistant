@@ -37,8 +37,9 @@ def _family(key: str) -> str:
     return key.split("_")[0]
 
 
-def _audit(crafting: dict) -> tuple[list[str], dict[str, dict]]:
+def _audit(crafting: dict) -> tuple[list[str], list[str], dict[str, dict]]:
     problems: list[str] = []
+    notes: list[str] = []
     seen: dict[str, dict] = {}
     slots = 0
 
@@ -53,14 +54,14 @@ def _audit(crafting: dict) -> tuple[list[str], dict[str, dict]]:
                 for key, group in groups.items():
                     group.sort(key=lambda modifier: modifier["start"])
                     where = f"{name} T{tier_index + 1} {material.get('slot')}"
+                    # A curve may legitimately only start at 500 (the stat holds
+                    # its first value below that), so this is a note, not a bug.
                     if group[0]["start"] > 0:
-                        problems.append(
-                            f"{where}: {key} starts at {group[0]['start']}, "
-                            "not 0")
+                        notes.append(
+                            f"{where}: {key} starts at {group[0]['start']}")
                     if group[-1]["end"] < 1000:
-                        problems.append(
-                            f"{where}: {key} ends at {group[-1]['end']}, "
-                            "not 1000")
+                        notes.append(
+                            f"{where}: {key} ends at {group[-1]['end']}")
                     for lower, upper in zip(group, group[1:]):
                         if upper["start"] > lower["end"] + 1:
                             problems.append(
@@ -83,10 +84,11 @@ def _audit(crafting: dict) -> tuple[list[str], dict[str, dict]]:
                     })
                     info["slots"] += 1
 
-    return problems, {"slot_count": slots, "keys": seen}
+    return problems, notes, {"slot_count": slots, "keys": seen}
 
 
-def _report(modes: dict[str, dict], problems: list[str]) -> None:
+def _report(modes: dict[str, dict], problems: list[str],
+            notes: list[str]) -> None:
     keys = modes["keys"]
     print(f"\n{modes['slot_count']:,} material slots, "
           f"{len(keys)} distinct properties\n")
@@ -99,12 +101,17 @@ def _report(modes: dict[str, dict], problems: list[str]) -> None:
         print(f"  {info['name']}")
 
     if problems:
-        print(f"\n{len(problems)} anomalies (first 15):")
+        print(f"\n{len(problems)} problems (first 15):")
         for problem in problems[:15]:
             print(f"  {problem}")
     else:
-        print("\nSegments: every property covers 0-1000 with no gaps, "
-              "overlaps or mixed modes")
+        print("\nSegments: no gaps, no overlaps, no mixed modes")
+
+    if notes:
+        print(f"\n{len(notes)} curves start above quality 0 or end below 1000; "
+              "the modifier simply holds at its first or last value there")
+        for note in notes[:5]:
+            print(f"  {note}")
 
 
 def _total(crafting: dict, name: str, qualities: list[int]) -> str:
@@ -153,8 +160,8 @@ def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     path = Path(argv[0]) if argv else DEFAULT
     crafting = _load(path)
-    problems, modes = _audit(crafting)
-    _report(modes, problems)
+    problems, notes, modes = _audit(crafting)
+    _report(modes, problems, notes)
 
     print("\nRepresentative blueprints (stock 500, then perfect 1000)")
     seen: set[str] = set()
