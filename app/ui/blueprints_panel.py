@@ -498,9 +498,13 @@ class BlueprintsPanel(QWidget):
 
         if info is not None:
             parts: list[str] = []
-            for place in list(info.places)[:3]:
+            for place in info.places:
+                if info.system and place.casefold() == info.system.casefold():
+                    continue
                 if place not in parts:
                     parts.append(place)
+                if len(parts) >= 3:
+                    break
             if not parts and info.location:
                 parts.append(info.location)
             if info.system and info.system not in parts:
