@@ -143,13 +143,14 @@ def build_crafting(recipes: dict,
                 for option in (slot or {}).get("options") or []:
                     if not isinstance(option, dict):
                         continue
-                    name = str(option.get("resourceName")
-                               or option.get("itemName") or "").strip()
-                    if not name:
+                    option_name = str(option.get("resourceName")
+                                      or option.get("itemName")
+                                      or "").strip()
+                    if not option_name:
                         continue
                     parsed.append({
                         "type": str(option.get("type") or "").strip(),
-                        "name": name,
+                        "name": option_name,
                         "quantity": _number(option.get("quantity")),
                         "minQuality": _number(option.get("minQuality")),
                     })
@@ -289,6 +290,7 @@ def main(argv: list[str] | None = None) -> int:
         with open(args.recipes, "r", encoding="utf-8") as handle:
             recipes = json.load(handle)
         crafting, unmatched = build_crafting(recipes, _entity_names(data))
+        source = recipes.get("blueprints") or []
         craft_out = out.parent / "blueprint_crafting.json"
         craft_out.parent.mkdir(parents=True, exist_ok=True)
         craft_out.write_text(json.dumps({
@@ -297,8 +299,11 @@ def main(argv: list[str] | None = None) -> int:
                      f"{args.recipes.name}."),
             "crafting": crafting,
         }, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"{len(crafting)} recipes, {unmatched} without a matching name "
-              f"-> {craft_out}")
+        print(f"{len(crafting)} recipes from {len(source)} blueprints, "
+              f"{unmatched} without a matching name -> {craft_out}")
+        if len(crafting) * 2 < len(source):
+            print("warning: far fewer recipes than blueprints; product names "
+                  "may be colliding", file=sys.stderr)
 
     return 0
 
