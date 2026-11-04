@@ -8,6 +8,7 @@ build/
 dist/
 *.log
 verification.txt
+audit.txt
 
 # Local agent permissions and sandbox configuration. Never publish the machine's
 # paths or rules.
