@@ -13,6 +13,7 @@ with the tools you actually use — no alt-tabbing, no second monitor.
 - **Combat** — damage, kills and soft deaths as they happen.
 - **Blueprints** — every blueprint you can earn, how to unlock it, and what your
   materials will make.
+- **Refinery** — a small card when a work order finishes, so you know it's ready.
 - **Notes** — a scratchpad that survives a restart.
 
 It only reads two things: Star Citizen's game log, and the little patch of screen
@@ -45,8 +46,13 @@ A few honest notes:
   shows **changes** (`Impact Force +7.5%`), not a full item card.
 - Only earnable blueprints are listed. Some definitions exist in the files but
   no mission awards them yet; they stay out of the way until they do.
+- Data is refreshed from `4.10.3` live, so recent additions such as the Skarnov
+  rifle are in — search `skarnov`, and the **Raider Camo** blueprint is awarded
+  by InterSec Defense Solutions in Nyx.
 - New: the scanner preview in settings now sits right under the SCANNING buttons
   instead of below the volume slider.
+- New: refinery work orders raise a closeable card when they finish. Turn it off
+  with `refinery_alerts` in `config.json`; `refinery_voice` speaks it too.
 
 ## Install
 
