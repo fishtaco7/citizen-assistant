@@ -29,6 +29,8 @@ from .game_log import GameLogMonitor
 from .hotkeys import HotkeyThread
 from .mining import MiningData
 from .orefinder import LiveData
+from .refinery import RefineryTracker
+from .refinery_audio import RefineryAudio
 from .ui.blueprint_toast import BlueprintToast
 from .ui.blueprints_panel import BlueprintsPanel
 from .ui.combat_panel import CombatPanel
@@ -38,6 +40,7 @@ from .ui.mining_panel import MiningPanel
 from .ui.navbar import NavBar
 from .ui.notes_panel import NotesPanel
 from .ui.orefinder_panel import OreFinderPanel
+from .ui.refinery_popup import RefineryPopup
 from .ui.region_selector import RegionSelector
 from .ui.settings_panel import SettingsPanel
 from .ui.uex_panel import UexPanel
@@ -365,6 +368,8 @@ class OverlayApp(QObject):
     inventory_event_signal = Signal(object)
     # Re-emitted from the Game.log tailer's thread so the GUI can react.
     pilot_seat = Signal(bool)
+    # Refinery events arrive on the tracker's dispatcher thread.
+    refinery_event = Signal(object)
 
     def __init__(self, app: QApplication, cfg: Config, demo: bool = False,
                  capture_visible: bool = False, launch_args: list[str] | None = None):
@@ -433,11 +438,20 @@ class OverlayApp(QObject):
         self.game_log = GameLogMonitor(callback=self._on_game_log_event)
         self.pilot_seat.connect(self._on_pilot_seat)
 
+        # Refinery work orders. The tracker watches the same game log, times the
+        # jobs and emits ``job_complete``; the popup is only a renderer.
+        self.refinery = RefineryTracker(
+            audio=RefineryAudio(enabled=bool(cfg.get("refinery_voice", False))))
+        self.refinery.subscribe(self.refinery_event.emit)
+        self.refinery_event.connect(self._on_refinery_event)
+        self._refinery_popups: set[RefineryPopup] = set()
+
         self._build_tray()
         self._wire()
         self.app.aboutToQuit.connect(self.hauling.shutdown)
         self.app.aboutToQuit.connect(self.combat.close)
         self.app.aboutToQuit.connect(self.blueprint_tracker.close)
+        self.app.aboutToQuit.connect(self.refinery.close)
         # Last chance to write the notepad before the process exits.
         self.app.aboutToQuit.connect(self.notes.flush)
         self.app.aboutToQuit.connect(self.game_log.stop)
@@ -642,6 +656,7 @@ class OverlayApp(QObject):
         self._topmost.start()
         self.hotkeys.start()
         self.game_log.start()
+        self.refinery.start()
 
         if bool(self.cfg.get("blueprint_history_auto", True)):
             # Give the registry worker a moment to load, then fill it once.
@@ -808,6 +823,23 @@ class OverlayApp(QObject):
         if self.panel.isVisible():
             self.panel.hide()
             self._sync_nav_active()
+
+    def _on_refinery_event(self, event) -> None:
+        """Show a closeable card when a work order finishes."""
+        if getattr(event, "event_type", "") != "job_complete":
+            return
+        job = getattr(event, "job", None)
+        if job is None or not bool(self.cfg.get("refinery_alerts", True)):
+            return
+        try:
+            popup = RefineryPopup(job)
+            win32.make_overlay_window(popup)
+            popup.closed.connect(
+                lambda closed=popup: self._refinery_popups.discard(closed))
+            self._refinery_popups.add(popup)
+            popup.show()
+        except Exception:
+            traceback.print_exc()
 
     def _on_inventory_event(self, event) -> None:
         """Forward blueprint payloads to the host toast / shopping-list hook."""
