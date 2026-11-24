@@ -710,16 +710,28 @@ python -m unittest discover -s tests
 ### Generating the data
 
 A snapshot of both files ships in `app/data/`, so a fresh install already has
-blueprints, missions, reputation gates and recipes. The importer regenerates it
-for a new patch:
+blueprints, missions, reputation gates and recipes. One script refreshes it from
+SCMDB for the current build:
+
+```bash
+bash tools/refresh_data.sh              # latest live build
+CHANNEL=ptu bash tools/refresh_data.sh  # newest PTU build instead
+```
+
+It asks SCMDB for the current version, downloads the merged and crafting dumps
+into `~/Documents/projects/scmdb`, regenerates `app/data/blueprint_sets.json`
+and `blueprint_crafting.json`, audits the result, and reports whether a given
+name (Skarnov by default) is present. Review the diff, then commit `app/data`.
+
+To generate by hand instead:
 
 ```bash
 python -m tools.scmdb_import ~/Documents/projects/scmdb/merged.json \
-  --recipes ~/Documents/projects/scmdb/blueprints.json \
+  --recipes ~/Documents/projects/scmdb/crafting_blueprints.json \
   --out app/data/blueprint_sets.json
 ```
 
-That writes `app/data/blueprint_sets.json` and, beside it,
+Both commands write `app/data/blueprint_sets.json` and, beside it,
 `app/data/blueprint_crafting.json`. Commit both, and every install picks them up
 on the next update.
 
@@ -734,7 +746,9 @@ It prints one representative blueprint per property family, which is the quickes
 way to compare a value against a crafting site.
 
 Files in `%APPDATA%\Citizen Assistant\` win over the bundled ones, so a locally
-generated set can be used without touching the install.
+generated set can be used without touching the install. A stale copy there will
+shadow a newer bundled file — the BLUEPRINTS footer marks that with
+`· config data`; delete or move the copy to fall back to the shipped data.
 
 The data derives from SCMDB (https://scmdb.net) and, underneath, CIG's game
 files; the note field in each file records the source and patch.
